@@ -8,6 +8,7 @@ profiles:
     servers:
       - paas-registry
       - paas-host-1
+      - paas-host-4      
       - storage-monitor-1
       - storage-osd-1
   - name: paas_full
