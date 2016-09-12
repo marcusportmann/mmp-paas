@@ -1,0 +1,20 @@
+# Windows-specific files
+/**/Thumbs.db
+/**/desktop.ini
+
+# Mac-specific things (thanks to Michael Aaron Safyan)
+/**/.DS_Store
+
+# Editors temporary files 
+/**/*~
+
+.vagrant/
+
+nohup.out
+ansible/installs/*.zip
+ansible/installs/*.xz
+ansible/installs/*.gzip
+ansible/installs/*.tgz
+ansible/installs/*.bz2
+ansible/installs/*.tbz2
+ansible/installs/*.rpm

@@ -1,0 +1,30 @@
+version: 0.1
+
+log:
+  fields:
+    service: registry
+storage:
+    cache:
+        layerinfo: inmemory
+    filesystem:
+        rootdirectory: /var/lib/registry
+auth:
+  htpasswd:
+    realm: docker-registry-realm
+    path: /etc/docker-distribution/registry/htpasswd
+http:
+    addr: :5000
+    net: tcp
+    prefix: /
+    tls:
+        certificate: /etc/pki/tls/certs/paas/{{ inventory_hostname }}.crt
+        key: /etc/pki/tls/private/paas/{{ inventory_hostname }}.key
+    debug:
+        addr: :5001
+    secret: asecretforlocaldevelopment
+    headers:
+        X-Content-Type-Options: [nosniff]
+
+
+
+

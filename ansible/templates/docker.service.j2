@@ -1,0 +1,35 @@
+[Unit]
+Description=Docker Application Container Engine
+Documentation=https://docs.docker.com
+After=network-online.target docker.socket docker-tcp.socket
+Requires=docker.socket docker-tcp.socket
+
+[Service]
+Type=notify
+Environment="DOCKER_OPTIONS="
+Environment="DOCKER_NETWORK_OPTIONS=--tlsverify --tlscacert=/etc/pki/tls/certs/paas/paas-ca.crt --tlscert=/etc/pki/tls/certs/paas/{{ inventory_hostname }}.crt --tlskey=/etc/pki/tls/private/paas/{{ inventory_hostname }}.key"
+Environment="DOCKER_STORAGE_OPTIONS=-s overlay"
+# The default is not to use systemd for cgroups because the delegate issues still
+# exists and systemd currently does not support the cgroup feature set required
+# for containers run by docker
+ExecStart=/usr/bin/docker daemon --host=fd:// $DOCKER_OPTIONS $DOCKER_NETWORK_OPTIONS $DOCKER_STORAGE_OPTIONS
+ExecReload=/bin/kill -s HUP $MAINPID
+LimitNOFILE=1048576
+# Having non-zero Limit*s causes performance problems due to accounting overhead
+# in the kernel. We recommend using cgroups to do container-local accounting.
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TimeoutStartSec=0
+# Set delegate yes so that systemd does not reset the cgroups of docker containers
+Delegate=yes
+# Kill only the docker process, not all processes in the cgroup
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+# ADD_REGISTRY='--add-registry localhost:5000'
+# INSECURE_REGISTRY='--insecure-registry localhost:5000'

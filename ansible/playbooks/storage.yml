@@ -1,0 +1,230 @@
+- hosts: ceph_node
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Install the latest yum-plugin-priorities package
+    yum: 
+      name: yum-plugin-priorities 
+      state: latest
+  - name: Install the latest epel-release package
+    yum: 
+      name: epel-release
+      state: latest
+  - name: Add the ceph YUM Repository
+    yum_repository:
+      name: ceph
+      file: ceph
+      description: Ceph packages for $basearch
+      baseurl: https://download.ceph.com/rpm-jewel/el7/$basearch
+      gpgkey: https://download.ceph.com/keys/release.asc
+      gpgcheck: yes
+      enabled: yes
+      priority: 2
+  - name: Add the ceph-noarch YUM Repository
+    yum_repository:
+      name: ceph-noarch
+      file: ceph
+      description: Ceph noarch packages
+      baseurl: https://download.ceph.com/rpm-jewel/el7/noarch
+      gpgkey: https://download.ceph.com/keys/release.asc
+      gpgcheck: yes
+      enabled: yes
+      priority: 2
+  - name: Add the ceph-noarch YUM Repository
+    yum_repository:
+      name: ceph-sources
+      file: ceph
+      description: Ceph source packages
+      baseurl: https://download.ceph.com/rpm-jewel/el7/SRPMS
+      gpgkey: https://download.ceph.com/keys/release.asc
+      gpgcheck: yes
+      enabled: yes
+      priority: 2
+  - name: Install the required packages for Ceph
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - snappy
+      - leveldb
+      - gdisk
+      - python-argparse
+      - gperftools-libs
+      - ceph
+
+
+- hosts: ceph_monitor
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Open TCP port 6789 for Ceph monitor connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="6789" accept' permanent=true state=enabled immediate=true
+    
+  - name: "Save the UUID for the Ceph storage cluster in the /etc/ceph/cluster_id file"
+    shell: echo "{{ ceph_cluster_id }}" > /etc/ceph/cluster_id  
+  - name: "Set the permissions for the /etc/ceph/cluster_id file"
+    file: path=/etc/ceph/cluster_id state=file owner=root group=ceph mode=0640
+    
+  - name: Create the /etc/ceph/ceph.conf file
+    template: src=../templates/ceph.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
+    
+  - name: "Check if the /etc/ceph/ceph.mon.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    stat: path=/etc/ceph/ceph.mon.keyring
+    register: cluster_monitor_keyring_exists
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Create the Ceph cluster monitor keyring on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    command: ceph-authtool --create-keyring /etc/ceph/ceph.mon.keyring --gen-key --name mon. --cap mon 'allow *'
+    when: (cluster_monitor_keyring_exists.stat.exists == False)
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+    
+  - name: "Check if the /etc/ceph/ceph.client.admin.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    stat: path=/etc/ceph/ceph.client.admin.keyring
+    register: cluster_client_admin_keyring_exists
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Create the Ceph client admin keyring on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    command: ceph-authtool --create-keyring /etc/ceph/ceph.client.admin.keyring --gen-key --name client.admin --set-uid=0 --cap mon 'allow *' --cap osd 'allow *' --cap mds 'allow'
+    when: (cluster_client_admin_keyring_exists.stat.exists == False)
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Add the Ceph client admin keyring to the Ceph cluster monitor keyring on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    command: ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.admin.keyring
+    when: ((inventory_hostname == "{{ server_names_by_group['ceph_monitor'][0] }}") and (cluster_client_admin_keyring_exists.stat.exists == False))
+
+  - name: "Check if the /etc/ceph/ceph.mon.keyring file exists"
+    stat: path=/etc/ceph/ceph.mon.keyring
+    register: local_cluster_monitor_keyring_exists
+  - name: "Fetch the /etc/ceph/ceph.mon.keyring file from the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    fetch: src=/etc/ceph/ceph.mon.keyring dest=/tmp
+    when: local_cluster_monitor_keyring_exists.stat.exists == False
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Copy the ceph.mon.keyring file to the monitor node"
+    copy: src="/tmp/{{ inventory_hostname }}/etc/ceph/ceph.mon.keyring" dest=/etc/ceph/ owner=root group=ceph mode=0640
+    when: local_cluster_monitor_keyring_exists.stat.exists == False
+  - name: "Set the permissions for the /etc/ceph/ceph.mon.keyring file"
+    file: path=/etc/ceph/ceph.mon.keyring state=file owner=root group=ceph mode=0640
+    
+  - name: "Check if the /etc/ceph/ceph.client.admin.keyring file exists"
+    stat: path=/etc/ceph/ceph.client.admin.keyring
+    register: local_cluster_client_admin_keyring_exists
+  - name: "Fetch the /etc/ceph/ceph.client.admin.keyring file from the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    fetch: src=/etc/ceph/ceph.client.admin.keyring dest=/tmp
+    when: local_cluster_client_admin_keyring_exists.stat.exists == False
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Copy the ceph.client.admin.keyring file to the monitor node"
+    copy: src="/tmp/{{ inventory_hostname }}/etc/ceph/ceph.client.admin.keyring" dest=/etc/ceph/ owner=root group=ceph mode=0640
+    when: local_cluster_client_admin_keyring_exists.stat.exists == False
+  - name: "Set the permissions for the /etc/ceph/ceph.client.admin.keyring file"
+    file: path=/etc/ceph/ceph.client.admin.keyring state=file owner=root group=ceph mode=0640
+
+  - name: "Generate the Ceph cluster monitor map"
+    command: monmaptool  --create --fsid "{{ ceph_cluster_id }}" --clobber /etc/ceph/monmap
+  - name: "Add the Ceph monitor nodes to the Ceph cluster monitor map"
+    command: monmaptool  --add "{{ item }}" "{{ servers[item].ip }}":6789 --clobber /etc/ceph/monmap
+    with_items: "{{ server_names_by_group['ceph_monitor'] }}"
+  - name: "Create the /var/lib/ceph/mon/ceph-{{ inventory_hostname }} directory"
+    file: path="/var/lib/ceph/mon/ceph-{{ inventory_hostname }}" state=directory owner=ceph group=ceph mode=0750
+  - name: "Populate the monitor daemon with the monitor map and keyring"
+    command: ceph-mon --mkfs -i "{{ inventory_hostname }}" --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring
+    become: true
+    become_user: ceph    
+  - name: "Touch the /var/lib/ceph/mon/ceph-{{ inventory_hostname }}/done file"
+    file: path="/var/lib/ceph/mon/ceph-{{ inventory_hostname }}/done" state=touch owner=ceph group=ceph mode=0640
+  - name: "Enable the monitor daemon"
+    service: name="ceph-mon@{{ inventory_hostname }}" enabled=yes    
+  - name: "Start the monitor daemon"
+    service: name="ceph-mon@{{ inventory_hostname }}" state=started    
+
+
+- hosts: ceph_osd
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Open TCP port 6789 for Ceph OSD and Metadata Server connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="6800-7300" accept' permanent=true state=enabled immediate=true
+    
+  - name: "Save the UUID for the Ceph storage cluster in the /etc/ceph/cluster_id file"
+    shell: echo "{{ ceph_cluster_id }}" > /etc/ceph/cluster_id  
+  - name: "Set the permissions for the /etc/ceph/cluster_id file"
+    file: path=/etc/ceph/cluster_id state=file owner=root group=ceph mode=0640
+  
+  - name: Create the /etc/ceph/ceph.conf file
+    template: src=../templates/ceph.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
+
+  - name: "Check if the /etc/ceph/ceph.client.admin.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    stat: path=/etc/ceph/ceph.client.admin.keyring
+    register: cluster_client_admin_keyring_exists
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - fail:
+      msg: "Failed to find the /etc/ceph/ceph.client.admin.keyring file on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    when: cluster_client_admin_keyring_exists.stat.exists == False
+    
+  - name: "Check if the /etc/ceph/ceph.client.admin.keyring file exists"
+    stat: path=/etc/ceph/ceph.client.admin.keyring
+    register: local_cluster_client_admin_keyring_exists
+  - name: "Fetch the /etc/ceph/ceph.client.admin.keyring file from the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    fetch: src=/etc/ceph/ceph.client.admin.keyring dest=/tmp
+    when: local_cluster_client_admin_keyring_exists.stat.exists == False
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Copy the ceph.client.admin.keyring file to the OSD node"
+    copy: src="/tmp/{{ inventory_hostname }}/etc/ceph/ceph.client.admin.keyring" dest=/etc/ceph/ owner=root group=ceph mode=0640
+    when: local_cluster_client_admin_keyring_exists.stat.exists == False
+  - name: "Set the permissions for the /etc/ceph/ceph.client.admin.keyring file"
+    file: path=/etc/ceph/ceph.client.admin.keyring state=file owner=root group=ceph mode=0640
+      
+  - name: "Check if the /etc/ceph/osd_id file exists"
+    stat: path=/etc/ceph/osd_id
+    register: osd_id_exists
+  - name: "Generate and save the UUID for the OSD node"
+    shell: uuidgen > /etc/ceph/osd_id
+    when: osd_id_exists.stat.exists == False
+  - name: "Retrieve the UUID for the OSD node"
+    command: cat /etc/ceph/osd_id
+    register: osd_id
+  - name: "Set the permissions for the /etc/ceph/osd_id file"
+    file: path=/etc/ceph/osd_id state=file owner=root group=ceph mode=0640
+    
+  - name: "Check if the /etc/ceph/osd_number file exists"
+    stat: path=/etc/ceph/osd_number
+    register: osd_number_exists
+  - name: "Create the Ceph OSD and save the OSD number"
+    shell: ceph osd create "{{ osd_id.stdout }}" > /etc/ceph/osd_number
+    when: osd_number_exists.stat.exists == False    
+  - name: "Retrieve the OSD number for the OSD node"
+    command: cat /etc/ceph/osd_number
+    register: osd_number
+  - name: "Create the /var/lib/ceph/osd/ceph-{{ osd_number.stdout }} OSD data directory"
+    file: path="/var/lib/ceph/osd/ceph-{{ osd_number.stdout }}" state=directory owner=ceph group=ceph mode=0750
+    when: osd_number_exists.stat.exists == False
+  - name: "Initialise the OSD data directory"
+    command: ceph-osd -i "{{ osd_number.stdout }}" --mkfs --mkkey --osd-uuid "{{ osd_id.stdout }}"
+    become: true
+    become_user: ceph    
+    when: osd_number_exists.stat.exists == False
+  - name: "Register the OSD authentication key"
+    command: ceph auth add osd."{{ osd_number.stdout }}" osd 'allow *' mon 'allow profile osd' -i /var/lib/ceph/osd/ceph-"{{ osd_number.stdout }}"/keyring
+    when: osd_number_exists.stat.exists == False
+  - name: "Add the Ceph node to the CRUSH map"
+    command: ceph osd crush add-bucket "{{ servers[inventory_hostname].hostname }}" host
+    when: osd_number_exists.stat.exists == False
+  - name: "Place the Ceph node under the root default"
+    command: ceph osd crush move "{{ servers[inventory_hostname].hostname }}" root=default
+    when: osd_number_exists.stat.exists == False
+  - name: "Add the OSD to the CRUSH map so that it can begin receiving data" 
+    command: ceph osd crush add osd."{{ osd_number.stdout }}" 1.0 host="{{ servers[inventory_hostname].hostname }}"
+    when: osd_number_exists.stat.exists == False
+  - name: "Enable the OSD daemon"
+    service: name="ceph-osd@{{ osd_number.stdout }}" enabled=yes    
+  - name: "Start the OSD daemon"
+    service: name="ceph-osd@{{ osd_number.stdout }}" state=started
+  - name: "Create the docker Ceph pool"
+    command: ceph osd pool create docker 128
+    when: ((osd_number_exists.stat.exists == False) and (inventory_hostname == server_names_by_group['ceph_osd'][server_names_by_group['ceph_osd']|length - 1]))
+
+  
+
+    
+    
+    
+

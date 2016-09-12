@@ -1,0 +1,217 @@
+---
+
+- hosts: paas-registry
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Create the /etc/pki/tls/private/paas directory
+    file: path=/etc/pki/tls/private/paas state=directory owner=root group=root mode=0770
+  - name: Create the /etc/pki/tls/certs/paas directory
+    file: path=/etc/pki/tls/certs/paas state=directory owner=root group=root mode=0770
+  - name: Copy the private key for the docker registry to the /etc/pki/tls/private/paas directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.key dest=/etc/pki/tls/private/paas/{{ inventory_hostname }}.key owner=root group=root mode=0640
+  - name: Copy the certificate for the docker host to the /etc/pki/tls/certs/paas directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.crt dest=/etc/pki/tls/certs/paas/{{ inventory_hostname }}.crt owner=root group=root mode=0644
+  - name: Copy the root-ca.crt certificate to the /etc/pki/tls/certs/paas directory
+    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/pki/tls/certs/paas/root-ca.crt owner=root group=root mode=0644
+  - name: Copy the paas-ca.crt certificate to the /etc/pki/tls/certs/paas directory
+    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/pki/tls/certs/paas/paas-ca.crt owner=root group=root mode=0644
+  - name: Add the Docker YUM Repository
+    yum_repository:
+      name: docker
+      description: Docker Repository
+      baseurl: https://yum.dockerproject.org/repo/main/centos/$releasever/
+      gpgkey: https://yum.dockerproject.org/gpg
+      gpgcheck: yes
+  - name: Install the latest docker-distribution package
+    yum: 
+      name: docker-distribution 
+      state: latest
+  - name: Install the latest httpd-tools package
+    yum: 
+      name: httpd-tools
+      state: latest
+  - name: Open TCP port 5000 for Docker Registry connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="5000" accept' permanent=true state=enabled immediate=true
+  - name: Open TCP port 5001 for Docker Registry connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="5001" accept' permanent=true state=enabled immediate=true
+  - name: Create the /etc/docker-distribution/registry/htpasswd file used to provide authenticated access to the Docker Registry
+    command: htpasswd -cbB -C 10 /etc/docker-distribution/registry/htpasswd paas paas
+  - name: Move the /etc/docker-distribution/registry/config.yml file to /etc/docker-distribution/registry/config.yml.original
+    command: creates="/etc/docker-distribution/registry/config.yml.original" mv /etc/docker-distribution/registry/config.yml /etc/docker-distribution/registry/config.yml.original      
+  - name: Create the /etc/docker-distribution/registry/config.yml file
+    template: src=../templates/config.yml.j2 dest=/etc/docker-distribution/registry/config.yml owner=root group=root mode=0644  
+  - name: Enable the docker-distribution service
+    service: name=docker-distribution enabled=yes
+  - name: Stop the docker-distribution service
+    service: name=docker-distribution state=stopped    
+  - name: Start the docker-distribution service
+    service: name=docker-distribution state=started
+
+
+- hosts: docker_host
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Create the /etc/pki/tls/private/paas directory
+    file: path=/etc/pki/tls/private/paas state=directory owner=root group=root mode=0770
+  - name: Create the /etc/pki/tls/certs/paas directory
+    file: path=/etc/pki/tls/certs/paas state=directory owner=root group=root mode=0770
+  - name: Copy the private key for the docker host to the /etc/pki/tls/private/paas directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.key dest=/etc/pki/tls/private/paas/{{ inventory_hostname }}.key owner=root group=root mode=0640
+  - name: Copy the certificate for the docker host to the /etc/pki/tls/certs/paas directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.crt dest=/etc/pki/tls/certs/paas/{{ inventory_hostname }}.crt owner=root group=root mode=0644
+  - name: Copy the root-ca.crt certificate to the /etc/pki/tls/certs/paas directory
+    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/pki/tls/certs/paas/root-ca.crt owner=root group=root mode=0644
+  - name: Copy the paas-ca.crt certificate to the /etc/pki/tls/certs/paas directory
+    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/pki/tls/certs/paas/paas-ca.crt owner=root group=root mode=0644
+  - name: Create the directory /etc/docker/certs.d/paas-registry:5000 if required
+    file: path=/etc/docker/certs.d/paas-registry:5000 state=directory owner=root group=root mode=0755 recurse=yes
+  - name: Copy the root-ca.crt certificate to the /etc/docker/certs.d/paas-registry:5000 directory
+    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/docker/certs.d/paas-registry:5000/root-ca.crt owner=root group=root mode=0644
+  - name: Copy the paas-ca.crt certificate to the /etc/docker/certs.d/paas-registry:5000 directory
+    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/docker/certs.d/paas-registry:5000/paas-ca.crt owner=root group=root mode=0644
+  - name: Add the Docker YUM Repository
+    yum_repository:
+      name: docker
+      description: Docker Repository
+      baseurl: https://yum.dockerproject.org/repo/main/centos/$releasever/
+      gpgkey: https://yum.dockerproject.org/gpg
+      gpgcheck: yes
+  - name: Install the Ceph packages
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - ceph-common
+      - librados2-devel 
+      - librbd1-devel
+    when: (('ceph_monitor' in server_names_by_group.values()) and (server_names_by_group['ceph_monitor']|length > 0))
+  - name: Install the Docker packages
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - docker-engine
+  - name: Open TCP port 2376 for Docker Remote API connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="2376" accept' permanent=true state=enabled immediate=true
+  - name: Open TCP port 2377 for connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" source address="{{ servers[item].ip }}" port protocol="tcp" port="2377" accept' permanent=true state=enabled immediate=true
+    with_items: "{{ server_names_by_group['docker_host'] }}"
+    when: item != inventory_hostname
+  - name: Open UDP port 4789 for connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" source address="{{ servers[item].ip }}" port protocol="udp" port="4789" accept' permanent=true state=enabled immediate=true
+    with_items: "{{ server_names_by_group['docker_host'] }}"
+    when: item != inventory_hostname
+  - name: Open TCP port 4789 for connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" source address="{{ servers[item].ip }}" port protocol="tcp" port="4789" accept' permanent=true state=enabled immediate=true
+    with_items: "{{ server_names_by_group['docker_host'] }}"
+    when: item != inventory_hostname
+  - name: Open UDP port 7946 for connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" source address="{{ servers[item].ip }}" port protocol="udp" port="7946" accept' permanent=true state=enabled immediate=true
+    with_items: "{{ server_names_by_group['docker_host'] }}"
+    when: item != inventory_hostname
+  - name: Open TCP port 7946 for connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" source address="{{ servers[item].ip }}" port protocol="tcp" port="7946" accept' permanent=true state=enabled immediate=true
+    with_items: "{{ server_names_by_group['docker_host'] }}"
+    when: item != inventory_hostname
+  - name: Create the /usr/lib/systemd/system/docker.socket file
+    template: src=../templates/docker.socket.j2 dest=/usr/lib/systemd/system/docker.socket owner=root group=root mode=0644  
+  - name: Create the /usr/lib/systemd/system/docker-tcp.socket file
+    template: src=../templates/docker-tcp.socket.j2 dest=/usr/lib/systemd/system/docker-tcp.socket owner=root group=root mode=0644  
+  - name: Create the /usr/lib/systemd/system/docker.service file
+    template: src=../templates/docker.service.j2 dest=/usr/lib/systemd/system/docker.service owner=root group=root mode=0644
+  - name: Enable the docker.socket
+    service: name=docker.socket enabled=yes    
+  - name: Enable the docker-tcp.socket
+    service: name=docker-tcp.socket enabled=yes    
+  - name: Enable the docker service
+    service: name=docker enabled=yes
+  - name: Stop the docker service
+    service: name=docker state=stopped    
+  - name: Start the docker service
+    service: name=docker state=started    
+  - name: "Retrieve the Docker Swarm cluster manager token from the first Docker Swarm manager ({{ server_names_by_group['docker_swarm_manager'][0] }})"
+    shell: docker swarm join-token -q manager 2>&1 ; true
+    register: docker_swarm_manager_token
+    ignore_errors: True
+    delegate_to: "{{ server_names_by_group['docker_swarm_manager'][0] }}"
+  - name: "Create the Docker Swarm cluster using the first Docker Swarm manager ({{ server_names_by_group['docker_swarm_manager'][0] }})"
+    command: docker swarm init --advertise-addr {{ servers[server_names_by_group['docker_swarm_manager'][0]].ip }}
+    when: ((inventory_hostname == "{{ server_names_by_group['docker_swarm_manager'][0] }}") and (docker_swarm_manager_token.stdout.find("This node is not a swarm manager") >= 0))  
+  - name: Create the /etc/ceph/ceph.conf file
+    template: src=../templates/ceph.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
+    when: (('ceph_monitor' in server_names_by_group.values()) and (server_names_by_group['ceph_monitor']|length > 0))
+  - name: "Copy the rbd-docker-plugin"
+    copy: src="../files/rbd-docker-plugin" dest=/usr/bin owner=root group=root mode=0770
+    when: (('ceph_monitor' in server_names_by_group.values()) and (server_names_by_group['ceph_monitor']|length > 0))
+
+    
+- hosts: docker_swarm_manager
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Retrieve the Docker Swarm cluster manager token from the first Docker Swarm manager
+    shell: docker swarm join-token -q manager 2>&1 ; true
+    register: docker_swarm_manager_token
+    ignore_errors: True
+    delegate_to: "{{ server_names_by_group['docker_swarm_manager'][0] }}"
+  - name: "Retrieve the Docker Swarm cluster token from the current Docker Swarm manager ({{ inventory_hostname }})"
+    shell: docker swarm join-token -q manager 2>&1 ; true
+    register: current_docker_swarm_manager_token
+    ignore_errors: True
+  - name: Join an additional Docker Swarm manager to the Docker Swarm cluster
+    command: docker swarm join --advertise-addr {{ servers[inventory_hostname].ip }} --token {{ docker_swarm_manager_token.stdout }} {{ servers[server_names_by_group['docker_swarm_manager'][0]].ip }}:2377
+    when: ((inventory_hostname != "{{ server_names_by_group['docker_swarm_manager'][0] }}") and (docker_swarm_manager_token.stdout.find("This node is not a swarm manager") == -1) and (current_docker_swarm_manager_token.stdout.find("This node is not a swarm manager") >= 0))  
+
+
+- hosts: docker_swarm_worker
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: "Retrieve the Docker Swarm cluster worker token from the first Docker Swarm manager ({{ server_names_by_group['docker_swarm_manager'][0] }})"
+    shell: docker swarm join-token -q worker 2>&1 ; true
+    register: docker_swarm_worker_token
+    ignore_errors: True
+    delegate_to: "{{ server_names_by_group['docker_swarm_manager'][0] }}"
+  - name: "Retrieve the Docker Swarm cluster token from the current Docker Swarm worker ({{ inventory_hostname }})"
+    shell: docker swarm join-token -q worker 2>&1 ; true
+    register: current_docker_swarm_worker_token
+    ignore_errors: True    
+  - name: "Join the Docker Swarm worker ({{ inventory_hostname }}) to the Docker Swarm cluster"
+    command: docker swarm join --token {{ docker_swarm_worker_token.stdout }} {{ servers[server_names_by_group['docker_swarm_manager'][0]].ip }}:2377
+    when: ((docker_swarm_worker_token.stdout.find("This node is not a swarm manager") == -1) and (current_docker_swarm_worker_token.stdout.find("to connect this node to swarm") != -1))
+
+
+- hosts: docker_ceph_plugin_build
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Install the latest packages required to build the Docker Ceph plugin
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - ceph-common
+      - librados2-devel 
+      - librbd1-devel
+      - git
+      - go
+  - name: Create the /tmp/go directory
+    file: path=/tmp/go state=directory owner=root group=root mode=0770
+  - name: Build the docker_ceph_driver
+    shell: GOPATH=/tmp/go go get github.com/marcusportmann/rbd-docker-plugin
+
+
+
+
+
+      
+
+
+  

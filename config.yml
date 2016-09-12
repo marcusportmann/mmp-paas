@@ -1,0 +1,624 @@
+---
+variables:
+  - name: ceph_cluster_id
+    values: 
+      - 16a68923-16d8-4003-af4c-ebabb08f1c4b
+profiles:
+  - name: paas_minimal
+    servers:
+      - paas-registry
+      - paas-host-1
+      - storage-monitor-1
+      - storage-osd-1
+  - name: paas_full
+    servers:
+      - paas-registry
+      - paas-host-1
+      - paas-host-2
+      - paas-host-3
+      - paas-host-4
+      - paas-host-5
+      - paas-host-6
+      - storage-monitor-1
+      - storage-monitor-2
+      - storage-monitor-3
+      - storage-osd-1
+      - storage-osd-2
+      - storage-osd-3
+providers:
+  vsphere:
+    user:                     INSERT_VSPERE_USERNAME_HERE
+    password:                 INSERT_VSPHERE_PASSWORD_HERE
+    host:                     INSERT_VCENTER_IP_HERE
+    insecure:                 true
+servers:
+  - name:                     paas-registry
+    ansible_playbook:         ansible/playbooks/paas.yml
+    ansible_groups:           docker_registry
+    virtualbox:
+      cpus:                   1
+      ram:                    512
+      swap:                   1024
+      hostname:               paas-registry
+      fqdn:                   paas-registry.local
+      dhcp:                   yes
+      ip:                     192.168.100.51
+      netmask:                255.255.255.0
+    vmware_fusion:
+      cpus:                   1
+      ram:                    512
+      swap:                   1024
+      hostname:               paas-registry
+      fqdn:                   paas-registry.local
+      dhcp:                   yes
+      ip:                     192.168.100.51
+      netmask:                255.255.255.0
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    4096
+      swap:                   2048
+      hostname:               paas-registry
+      fqdn:                   paas-registry.local
+      dhcp:                   no
+      ip:                     22.150.51.230
+      netmask:                255.255.255.192
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128
+
+  - name:                     paas-host-1
+    ansible_playbook:         ansible/playbooks/paas.yml
+    ansible_groups:           docker_host,docker_swarm_manager
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-1
+      fqdn:                   paas-host-1.local
+      dhcp:                   yes
+      ip:                     192.168.100.52
+      netmask:                255.255.255.0
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-1
+      fqdn:                   paas-host-1.local
+      dhcp:                   yes
+      ip:                     192.168.100.52
+      netmask:                255.255.255.0
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               paas-host-1
+      fqdn:                   paas-host-1.local
+      dhcp:                   no
+      ip:                     22.150.51.231
+      netmask:                255.255.255.192
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128
+
+  - name:                     paas-host-2
+    ansible_playbook:         ansible/playbooks/paas.yml
+    ansible_groups:           docker_host,docker_swarm_manager
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-2
+      fqdn:                   paas-host-2.local
+      dhcp:                   yes
+      ip:                     192.168.100.53
+      netmask:                255.255.255.0
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-2
+      fqdn:                   paas-host-2.local
+      dhcp:                   yes
+      ip:                     192.168.100.53
+      netmask:                255.255.255.0
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               paas-host-2
+      fqdn:                   paas-host-2.local
+      dhcp:                   no
+      ip:                     22.150.51.232
+      netmask:                255.255.255.192
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128
+
+  - name:                     paas-host-3
+    ansible_playbook:         ansible/playbooks/paas.yml
+    ansible_groups:           docker_host,docker_swarm_manager
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-3
+      fqdn:                   paas-host-3.local
+      dhcp:                   yes
+      ip:                     192.168.100.54
+      netmask:                255.255.255.0
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-3
+      fqdn:                   paas-host-3.local
+      dhcp:                   no
+      ip:                     192.168.100.54
+      netmask:                255.255.255.0
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               paas-host-3
+      fqdn:                   paas-host-3.local
+      dhcp:                   no
+      ip:                     22.150.51.233
+      netmask:                255.255.255.192
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128
+
+  - name:                     paas-host-4
+    ansible_playbook:         ansible/playbooks/paas.yml
+    ansible_groups:           docker_host,docker_swarm_worker,docker_ceph_plugin_build
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-4
+      fqdn:                   paas-host-4.local
+      dhcp:                   yes
+      ip:                     192.168.100.55
+      netmask:                255.255.255.0
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-4
+      fqdn:                   paas-host-4.local
+      dhcp:                   no
+      ip:                     192.168.100.55
+      netmask:                255.255.255.0
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               paas-host-4
+      fqdn:                   paas-host-4.local
+      dhcp:                   no
+      ip:                     22.150.51.234
+      netmask:                255.255.255.192
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128      
+
+  - name:                     paas-host-5
+    ansible_playbook:         ansible/playbooks/paas.yml
+    ansible_groups:           docker_host,docker_swarm_worker
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-5
+      fqdn:                   paas-host-5.local
+      dhcp:                   yes
+      ip:                     192.168.100.56
+      netmask:                255.255.255.0
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-5
+      fqdn:                   paas-host-5.local
+      dhcp:                   no
+      ip:                     192.168.100.56
+      netmask:                255.255.255.0
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               paas-host-5
+      fqdn:                   paas-host-5.local
+      dhcp:                   no
+      ip:                     22.150.51.235
+      netmask:                255.255.255.192
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128        
+
+  - name:                     paas-host-6
+    ansible_playbook:         ansible/playbooks/paas.yml
+    ansible_groups:           docker_host,docker_swarm_worker
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-6
+      fqdn:                   paas-host-6.local
+      dhcp:                   yes
+      ip:                     192.168.100.57
+      netmask:                255.255.255.0
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               paas-host-6
+      fqdn:                   paas-host-6.local
+      dhcp:                   no
+      ip:                     192.168.100.57
+      netmask:                255.255.255.0
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               paas-host-6
+      fqdn:                   paas-host-6.local
+      dhcp:                   no
+      ip:                     22.150.51.236
+      netmask:                255.255.255.192
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128              
+
+  - name:                     storage-monitor-1
+    ansible_playbook:         ansible/playbooks/storage.yml
+    ansible_groups:           ceph_node,ceph_monitor
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-monitor-1
+      fqdn:                   storage-monitor-1.local
+      dhcp:                   yes
+      ip:                     192.168.100.58
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-monitor-1
+      fqdn:                   storage-monitor-1.local
+      dhcp:                   no
+      ip:                     192.168.100.58
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               storage-monitor-1
+      fqdn:                   storage-monitor-1.local
+      dhcp:                   no
+      ip:                     22.150.51.237
+      netmask:                255.255.255.192
+      network:                22.150.51.192/26
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128
+      
+  - name:                     storage-monitor-2
+    ansible_playbook:         ansible/playbooks/storage.yml
+    ansible_groups:           ceph_node,ceph_monitor
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-monitor-2
+      fqdn:                   storage-monitor-2.local
+      dhcp:                   yes
+      ip:                     192.168.100.59
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-monitor-2
+      fqdn:                   storage-monitor-2.local
+      dhcp:                   no
+      ip:                     192.168.100.59
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               storage-monitor-2
+      fqdn:                   storage-monitor-2.local
+      dhcp:                   no
+      ip:                     22.150.51.238
+      netmask:                255.255.255.192
+      network:                22.150.51.192/26
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128      
+
+  - name:                     storage-monitor-3
+    ansible_playbook:         ansible/playbooks/storage.yml
+    ansible_groups:           ceph_node,ceph_monitor
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-monitor-3
+      fqdn:                   storage-monitor-3.local
+      dhcp:                   yes
+      ip:                     192.168.100.60
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-monitor-3
+      fqdn:                   storage-monitor-3.local
+      dhcp:                   no
+      ip:                     192.168.100.60
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               storage-monitor-3
+      fqdn:                   storage-monitor-3.local
+      dhcp:                   no
+      ip:                     22.150.51.239
+      netmask:                255.255.255.192
+      network:                22.150.51.192/26
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128   
+
+  - name:                     storage-osd-1
+    ansible_playbook:         ansible/playbooks/storage.yml
+    ansible_groups:           ceph_node,ceph_osd
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-osd-1
+      fqdn:                   storage-osd-1.local
+      dhcp:                   yes
+      ip:                     192.168.100.61
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-osd-1
+      fqdn:                   storage-osd-1.local
+      dhcp:                   no
+      ip:                     192.168.100.61
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               storage-osd-1
+      fqdn:                   storage-osd-1.local
+      dhcp:                   no
+      ip:                     22.150.51.240
+      netmask:                255.255.255.192
+      network:                22.150.51.192/26
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128
+
+  - name:                     storage-osd-2
+    ansible_playbook:         ansible/playbooks/storage.yml
+    ansible_groups:           ceph_node,ceph_osd
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-osd-2
+      fqdn:                   storage-osd-2.local
+      dhcp:                   yes
+      ip:                     192.168.100.62
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-osd-2
+      fqdn:                   storage-osd-2.local
+      dhcp:                   no
+      ip:                     192.168.100.62
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               storage-osd-2
+      fqdn:                   storage-osd-2.local
+      dhcp:                   no
+      ip:                     22.150.51.241
+      netmask:                255.255.255.192
+      network:                22.150.51.192/26
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128
+
+  - name:                     storage-osd-3
+    ansible_playbook:         ansible/playbooks/storage.yml
+    ansible_groups:           ceph_node,ceph_osd
+    virtualbox:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-osd-3
+      fqdn:                   storage-osd-3.local
+      dhcp:                   yes
+      ip:                     192.168.100.63
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+    vmware_fusion:
+      cpus:                   2
+      ram:                    1024
+      swap:                   1024
+      hostname:               storage-osd-3
+      fqdn:                   storage-osd-3.local
+      dhcp:                   no
+      ip:                     192.168.100.63
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               storage-osd-3
+      fqdn:                   storage-osd-3.local
+      dhcp:                   no
+      ip:                     22.150.51.242
+      netmask:                255.255.255.192
+      network:                22.150.51.192/26
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             268BlockA
+      compute_resource:       Cluster1
+      resource_pool_name:     Development PaaS
+      template_name:          /Templates/centos72
+      vm_base_path:           /Development PaaS
+      vlan:                   VLAN807
+      http_proxy:             http://22.150.32.85:3128      
+
