@@ -16,7 +16,7 @@ vagrant --profile=paas_minimal up --provider=virtualbox --no-parallel
 
 1. Download and install VirtualBox for Windows from https://virtualbox.org.
 
-- Configure the VirtualBox Host-Only Ethernet Adapter as follows:
+2. Configure the VirtualBox Host-Only Ethernet Adapter as follows:
 
   ```
   Adapter:
@@ -30,17 +30,17 @@ vagrant --profile=paas_minimal up --provider=virtualbox --no-parallel
     Lower Address Bound: 192.168.56.101
     Upper Address Bound: 192.168.56.254
     ```
-    
-- Download and install Git for Windows from https://git-scm.com/download/Windows.
 
-- Download and install Packer for Windows from https://packer.io. You can extract the Packer binary in the ZIP to your C:\Windows folder or copy it to a different directory and make sure this directory is part of the PATH environment variable.
+3. Download and install Git for Windows from https://git-scm.com/download/Windows.
 
-- Download and install Vagrant for Windows from https://www.vagrantup.com.
+4. Download and install Packer for Windows from https://packer.io. You can extract the Packer binary in the ZIP to your C:\Windows folder or copy it to a different directory and make sure this directory is part of the PATH environment variable.
 
-- Open a Git Bash terminal e.g. All apps > Git > Git Bash.
+5. Download and install Vagrant for Windows from https://www.vagrantup.com.
 
-- Clone the https://github.com/marcusportmann/mmp-packer.git project.
+6. Open a Git Bash terminal e.g. All apps > Git > Git Bash.
 
-- Execute the build-virtualbox.sh script under the mmp-packer directory.
+7. Clone the https://github.com/marcusportmann/mmp-packer.git project.
+
+8. Execute the build-virtualbox.sh script under the mmp-packer directory.
 
 
