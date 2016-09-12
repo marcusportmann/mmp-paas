@@ -47,3 +47,7 @@ vagrant --profile=paas_minimal up --provider=virtualbox --no-parallel
 
 10. Clone the https://github.com/marcusportmann/mmp-paas.git project.
 
+11. Execute the following command under the mmp-paas directory:
+
+  vagrant --profile=paas_minimal up --provider=virtualbox --no-parallel
+
