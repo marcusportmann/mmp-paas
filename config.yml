@@ -81,8 +81,8 @@ servers:
     ansible_playbook:         ansible/playbooks/paas.yml
     ansible_groups:           docker_host,docker_swarm_manager
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-1
       fqdn:                   paas-host-1.local
@@ -90,8 +90,8 @@ servers:
       ip:                     192.168.100.52
       netmask:                255.255.255.0
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-1
       fqdn:                   paas-host-1.local
@@ -125,8 +125,8 @@ servers:
     ansible_playbook:         ansible/playbooks/paas.yml
     ansible_groups:           docker_host,docker_swarm_manager
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-2
       fqdn:                   paas-host-2.local
@@ -134,8 +134,8 @@ servers:
       ip:                     192.168.100.53
       netmask:                255.255.255.0
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-2
       fqdn:                   paas-host-2.local
@@ -169,8 +169,8 @@ servers:
     ansible_playbook:         ansible/playbooks/paas.yml
     ansible_groups:           docker_host,docker_swarm_manager
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-3
       fqdn:                   paas-host-3.local
@@ -178,8 +178,8 @@ servers:
       ip:                     192.168.100.54
       netmask:                255.255.255.0
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-3
       fqdn:                   paas-host-3.local
@@ -213,8 +213,8 @@ servers:
     ansible_playbook:         ansible/playbooks/paas.yml
     ansible_groups:           docker_host,docker_swarm_worker,docker_ceph_plugin_build
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-4
       fqdn:                   paas-host-4.local
@@ -222,8 +222,8 @@ servers:
       ip:                     192.168.100.55
       netmask:                255.255.255.0
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-4
       fqdn:                   paas-host-4.local
@@ -257,8 +257,8 @@ servers:
     ansible_playbook:         ansible/playbooks/paas.yml
     ansible_groups:           docker_host,docker_swarm_worker
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-5
       fqdn:                   paas-host-5.local
@@ -266,8 +266,8 @@ servers:
       ip:                     192.168.100.56
       netmask:                255.255.255.0
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-5
       fqdn:                   paas-host-5.local
@@ -301,8 +301,8 @@ servers:
     ansible_playbook:         ansible/playbooks/paas.yml
     ansible_groups:           docker_host,docker_swarm_worker
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-6
       fqdn:                   paas-host-6.local
@@ -310,8 +310,8 @@ servers:
       ip:                     192.168.100.57
       netmask:                255.255.255.0
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               paas-host-6
       fqdn:                   paas-host-6.local
@@ -345,8 +345,8 @@ servers:
     ansible_playbook:         ansible/playbooks/storage.yml
     ansible_groups:           ceph_node,ceph_monitor
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-monitor-1
       fqdn:                   storage-monitor-1.local
@@ -355,8 +355,8 @@ servers:
       netmask:                255.255.255.0
       network:                192.168.100.0/24
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-monitor-1
       fqdn:                   storage-monitor-1.local
@@ -392,8 +392,8 @@ servers:
     ansible_playbook:         ansible/playbooks/storage.yml
     ansible_groups:           ceph_node,ceph_monitor
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-monitor-2
       fqdn:                   storage-monitor-2.local
@@ -402,8 +402,8 @@ servers:
       netmask:                255.255.255.0
       network:                192.168.100.0/24
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-monitor-2
       fqdn:                   storage-monitor-2.local
@@ -439,8 +439,8 @@ servers:
     ansible_playbook:         ansible/playbooks/storage.yml
     ansible_groups:           ceph_node,ceph_monitor
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-monitor-3
       fqdn:                   storage-monitor-3.local
@@ -449,8 +449,8 @@ servers:
       netmask:                255.255.255.0
       network:                192.168.100.0/24
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-monitor-3
       fqdn:                   storage-monitor-3.local
@@ -486,8 +486,8 @@ servers:
     ansible_playbook:         ansible/playbooks/storage.yml
     ansible_groups:           ceph_node,ceph_osd
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-osd-1
       fqdn:                   storage-osd-1.local
@@ -496,8 +496,8 @@ servers:
       netmask:                255.255.255.0
       network:                192.168.100.0/24
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-osd-1
       fqdn:                   storage-osd-1.local
@@ -533,8 +533,8 @@ servers:
     ansible_playbook:         ansible/playbooks/storage.yml
     ansible_groups:           ceph_node,ceph_osd
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-osd-2
       fqdn:                   storage-osd-2.local
@@ -543,8 +543,8 @@ servers:
       netmask:                255.255.255.0
       network:                192.168.100.0/24
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-osd-2
       fqdn:                   storage-osd-2.local
@@ -580,8 +580,8 @@ servers:
     ansible_playbook:         ansible/playbooks/storage.yml
     ansible_groups:           ceph_node,ceph_osd
     virtualbox:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-osd-3
       fqdn:                   storage-osd-3.local
@@ -590,8 +590,8 @@ servers:
       netmask:                255.255.255.0
       network:                192.168.100.0/24
     vmware_fusion:
-      cpus:                   2
-      ram:                    1024
+      cpus:                   1
+      ram:                    512
       swap:                   1024
       hostname:               storage-osd-3
       fqdn:                   storage-osd-3.local
