@@ -8,9 +8,17 @@ The config.yml file defines all the servers that make up the PaaS platform and t
 
 vagrant --profile=<PROFILE NAME> up --provider=<PROVIDER NAME> --no-parallel
 
+or
+
+vagrant --profile=<PROFILE NAME> destroy --force
+
 e.g.
 
 vagrant --profile=paas_minimal up --provider=virtualbox --no-parallel
+
+or
+
+vagrant --profile=paas_minimal destroy --force
 
 ## Installation
 

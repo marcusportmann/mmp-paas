@@ -104,19 +104,13 @@ end
 
 
 
-
-
-
 profileName = ''
 provider = ''
-
-
-
 
 Vagrant.require_version ">= 1.6.0"
 
 VAGRANTFILE_API_VERSION = '2'
-VAGRANT_DEFAULT_PROVIDER = 'vmware_fusion'
+VAGRANT_DEFAULT_PROVIDER = 'virtualbox'
 
 if not ENV['VAGRANT_PROVIDER'].nil?
   provider = ENV['VAGRANT_PROVIDER']
@@ -140,9 +134,12 @@ ARGV.each_with_index do |argument, index|
 
 end  
 
-puts "========> #{ARGV.length}"
-
-puts "Using the Vagrant provider: %s" % provider
+if (provider.nil? || provider.empty?)
+  puts "Using the Vagrant default provider: %s" %  VAGRANT_DEFAULT_PROVIDER
+  provider = VAGRANT_DEFAULT_PROVIDER
+else
+  puts "Using the Vagrant provider: %s" % provider
+end
 
 CONFIG_FILE = 'config.yml'
 CONFIG_FILE_PATH = File.join(File.dirname(__FILE__), CONFIG_FILE)
@@ -185,87 +182,91 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
-  # ------------------------------------------------------------------------------------ 
-  # Build the Ansible groups using the enabled servers
-  # ------------------------------------------------------------------------------------
-	ansible_groups = Hash.new
+  if (!provider.nil? && !provider.empty?)
 
-	servers.each do |server|
-		
-		if profile['servers'].include?(server['name'])
-			server['ansible_groups'].split(/\s*,\s*/).each do |ansible_group|
-			
-				if !ansible_groups[ansible_group]
-					ansible_groups[ansible_group] = []
-				end			
-			
-				ansible_groups[ansible_group] += [server['name']]
-			end
-		end	
-	end
+    # ------------------------------------------------------------------------------------ 
+    # Build the Ansible groups using the enabled servers
+    # ------------------------------------------------------------------------------------
+    ansible_groups = Hash.new
 
-  # ------------------------------------------------------------------------------------ 
-  # Save the configuration for the enabled servers in the Ansible variables
-  # ------------------------------------------------------------------------------------
-  ansible_vars = Hash.new
-  
-  ansible_vars["servers"] = Hash.new
-  ansible_vars["server_names_by_group"] = Hash.new
-  
-	servers.each do |server|
-		if profile['servers'].include?(server['name'])
-
-      server_var = Hash.new
+    servers.each do |server|
       
-			if ((not server[provider]['hostname'].nil?) && (not server[provider]['hostname'].empty?))
-        server_var['hostname'] = server[provider]['hostname']
-      end
-			if ((not server[provider]['fqdn'].nil?) && (not server[provider]['fqdn'].empty?))
-        server_var['fqdn'] = server[provider]['fqdn']
-      end
-			if ((not server[provider]['ip'].nil?) && (not server[provider]['ip'].empty?))
-        server_var['ip'] = server[provider]['ip']
-      end
-			if ((not server[provider]['network'].nil?) && (not server[provider]['network'].empty?))
-        server_var['network'] = server[provider]['network']
-      end
-      
-      ansible_vars['servers'][server['name']] = server_var
-
-			server['ansible_groups'].split(/\s*,\s*/).each do |ansible_group|
-
-				if !ansible_vars["server_names_by_group"][ansible_group]
-					ansible_vars["server_names_by_group"][ansible_group] = []
-				end			
-				
-				ansible_vars["server_names_by_group"][ansible_group] += [server['name']]
-
-      end
-
+      if profile['servers'].include?(server['name'])
+        server['ansible_groups'].split(/\s*,\s*/).each do |ansible_group|
+        
+          if !ansible_groups[ansible_group]
+            ansible_groups[ansible_group] = []
+          end			
+        
+          ansible_groups[ansible_group] += [server['name']]
+        end
+      end	
     end
-  end  
-  
-  # ------------------------------------------------------------------------------------ 
-  # Add the variables in the config.yml file to the Ansible variables
-  # ------------------------------------------------------------------------------------
-  variables = config_file['variables']
-  
-  variables.each do |variable|
-  
-    if variable['values'].length == 1
-      ansible_vars[variable['name']] = variable['values'][0]
+
+    # ------------------------------------------------------------------------------------ 
+    # Save the configuration for the enabled servers in the Ansible variables
+    # ------------------------------------------------------------------------------------
+    ansible_vars = Hash.new
+    
+    ansible_vars["servers"] = Hash.new
+    ansible_vars["server_names_by_group"] = Hash.new
+    
+    servers.each do |server|
+      if profile['servers'].include?(server['name'])
+
+        server_var = Hash.new
+        
+        if ((not server[provider]['hostname'].nil?) && (not server[provider]['hostname'].empty?))
+          server_var['hostname'] = server[provider]['hostname']
+        end
+        if ((not server[provider]['fqdn'].nil?) && (not server[provider]['fqdn'].empty?))
+          server_var['fqdn'] = server[provider]['fqdn']
+        end
+        if ((not server[provider]['ip'].nil?) && (not server[provider]['ip'].empty?))
+          server_var['ip'] = server[provider]['ip']
+        end
+        if ((not server[provider]['network'].nil?) && (not server[provider]['network'].empty?))
+          server_var['network'] = server[provider]['network']
+        end
+        
+        ansible_vars['servers'][server['name']] = server_var
+
+        server['ansible_groups'].split(/\s*,\s*/).each do |ansible_group|
+
+          if !ansible_vars["server_names_by_group"][ansible_group]
+            ansible_vars["server_names_by_group"][ansible_group] = []
+          end			
+          
+          ansible_vars["server_names_by_group"][ansible_group] += [server['name']]
+
+        end
+
+      end
+    end  
+    
+    # ------------------------------------------------------------------------------------ 
+    # Add the variables in the config.yml file to the Ansible variables
+    # ------------------------------------------------------------------------------------
+    variables = config_file['variables']
+    
+    variables.each do |variable|
+    
+      if variable['values'].length == 1
+        ansible_vars[variable['name']] = variable['values'][0]
+      end
+      
+      if variable['values'].length > 1
+        ansible_vars[variable['name']] = []
+      
+        variable['values'].each do |value|
+          ansible_vars[variable['name']] += [value]
+        end
+      end 
     end
     
-    if variable['values'].length > 1
-      ansible_vars[variable['name']] = []
-    
-      variable['values'].each do |value|
-        ansible_vars[variable['name']] += [value]
-      end
-    end 
+    puts "ansible_vars: %s" % ansible_vars 
+  
   end
-  
-  puts "ansible_vars: %s" % ansible_vars 
 	
   # ------------------------------------------------------------------------------------ 
   # Virtualbox Configuration
@@ -395,7 +396,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
             # NOTE: This box must have been added to Vagrant before executing this project.
             #
-            #       Clone the mmp-vagrant Git repository and build and add the Vagrant boxes.
+            #       Clone the mmp-packer Git repository and build and add the Vagrant boxes.
             #
             override.vm.box = "mmp/centos72" 
 
