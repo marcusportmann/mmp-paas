@@ -80,15 +80,6 @@
       baseurl: https://yum.dockerproject.org/repo/main/centos/$releasever/
       gpgkey: https://yum.dockerproject.org/gpg
       gpgcheck: yes
-  - name: Install the Ceph packages
-    yum: 
-      name: "{{item}}"
-      state: latest
-    with_items:
-      - ceph-common
-      - librados2-devel 
-      - librbd1-devel
-    when: (('ceph_monitor' in server_names_by_group.values()) and (server_names_by_group['ceph_monitor']|length > 0))
   - name: Install the Docker packages
     yum: 
       name: "{{item}}"
@@ -141,12 +132,6 @@
   - name: "Create the Docker Swarm cluster using the first Docker Swarm manager ({{ server_names_by_group['docker_swarm_manager'][0] }})"
     command: docker swarm init --advertise-addr {{ servers[server_names_by_group['docker_swarm_manager'][0]].ip }}
     when: ((inventory_hostname == "{{ server_names_by_group['docker_swarm_manager'][0] }}") and (docker_swarm_manager_token.stdout.find("This node is not a swarm manager") >= 0))  
-  - name: Create the /etc/ceph/ceph.conf file
-    template: src=../templates/ceph.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
-    when: (('ceph_monitor' in server_names_by_group.values()) and (server_names_by_group['ceph_monitor']|length > 0))
-  - name: "Copy the rbd-docker-plugin"
-    copy: src="../files/rbd-docker-plugin" dest=/usr/bin owner=root group=root mode=0770
-    when: (('ceph_monitor' in server_names_by_group.values()) and (server_names_by_group['ceph_monitor']|length > 0))
 
     
 - hosts: docker_swarm_manager
@@ -185,6 +170,46 @@
   - name: "Join the Docker Swarm worker ({{ inventory_hostname }}) to the Docker Swarm cluster"
     command: docker swarm join --token {{ docker_swarm_worker_token.stdout }} {{ servers[server_names_by_group['docker_swarm_manager'][0]].ip }}:2377
     when: ((docker_swarm_worker_token.stdout.find("This node is not a swarm manager") == -1) and (current_docker_swarm_worker_token.stdout.find("to connect this node to swarm") != -1))
+
+
+- hosts: docker_ceph_client
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+
+  - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    stat: path=/etc/ceph/ceph.client.docker.keyring
+    register: cluster_client_docker_keyring_exists
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - fail:
+      msg: "Failed to find the /etc/ceph/ceph.client.docker.keyring file on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    when: cluster_client_docker_keyring_exists.stat.exists == False
+    
+  - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists"
+    stat: path=/etc/ceph/ceph.client.docker.keyring
+    register: local_cluster_client_docker_keyring_exists
+  - name: "Fetch the /etc/ceph/ceph.client.docker.keyring file from the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    fetch: src=/etc/ceph/ceph.client.docker.keyring dest=/tmp
+    when: local_cluster_client_docker_keyring_exists.stat.exists == False
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Copy the ceph.client.docker.keyring file to the Docker host"
+    copy: src="/tmp/{{ inventory_hostname }}/etc/ceph/ceph.client.docker.keyring" dest=/etc/ceph/ owner=root group=ceph mode=0640
+    when: local_cluster_client_docker_keyring_exists.stat.exists == False
+  - name: "Set the permissions for the /etc/ceph/ceph.client.docker.keyring file"
+    file: path=/etc/ceph/ceph.client.docker.keyring state=file owner=root group=root mode=0640
+  - name: Install the latest Ceph client packages
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - ceph-common
+      - librados2 
+      - librbd1
+  - name: Create the /etc/ceph/ceph.conf file
+    template: src=../templates/ceph-docker.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
+  - name: "Copy the rbd-docker-plugin"
+    copy: src="../files/rbd-docker-plugin" dest=/usr/bin owner=root group=root mode=0770
 
 
 - hosts: docker_ceph_plugin_build

@@ -6,13 +6,18 @@ variables:
 profiles:
   - name: paas_minimal
     servers:
-      - paas-registry
-      - paas-host-1
-      - paas-host-4      
       - storage-monitor-1
       - storage-osd-1
+      - paas-registry
+      - paas-host-1
   - name: paas_full
     servers:
+      - storage-monitor-1
+      - storage-monitor-2
+      - storage-monitor-3
+      - storage-osd-1
+      - storage-osd-2
+      - storage-osd-3
       - paas-registry
       - paas-host-1
       - paas-host-2
@@ -20,12 +25,6 @@ profiles:
       - paas-host-4
       - paas-host-5
       - paas-host-6
-      - storage-monitor-1
-      - storage-monitor-2
-      - storage-monitor-3
-      - storage-osd-1
-      - storage-osd-2
-      - storage-osd-3
 providers:
   vsphere:
     user:                     INSERT_VSPERE_USERNAME_HERE
@@ -69,17 +68,17 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY
 
   - name:                     paas-host-1
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_manager
+    ansible_groups:           docker_host,docker_swarm_manager,docker_ceph_client
     virtualbox:
       cpus:                   1
       ram:                    512
@@ -113,13 +112,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY
 
   - name:                     paas-host-2
     ansible_playbook:         ansible/playbooks/paas.yml
@@ -157,13 +156,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY
 
   - name:                     paas-host-3
     ansible_playbook:         ansible/playbooks/paas.yml
@@ -201,17 +200,17 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY
 
   - name:                     paas-host-4
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_worker,docker_ceph_plugin_build
+    ansible_groups:           docker_host,docker_swarm_worker
     virtualbox:
       cpus:                   1
       ram:                    512
@@ -245,13 +244,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128      
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY      
 
   - name:                     paas-host-5
     ansible_playbook:         ansible/playbooks/paas.yml
@@ -289,13 +288,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128        
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY        
 
   - name:                     paas-host-6
     ansible_playbook:         ansible/playbooks/paas.yml
@@ -333,13 +332,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128              
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY              
 
   - name:                     storage-monitor-1
     ansible_playbook:         ansible/playbooks/storage.yml
@@ -380,13 +379,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY
       
   - name:                     storage-monitor-2
     ansible_playbook:         ansible/playbooks/storage.yml
@@ -427,13 +426,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128      
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY      
 
   - name:                     storage-monitor-3
     ansible_playbook:         ansible/playbooks/storage.yml
@@ -474,13 +473,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128   
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY   
 
   - name:                     storage-osd-1
     ansible_playbook:         ansible/playbooks/storage.yml
@@ -521,13 +520,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY
 
   - name:                     storage-osd-2
     ansible_playbook:         ansible/playbooks/storage.yml
@@ -568,13 +567,13 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY
 
   - name:                     storage-osd-3
     ansible_playbook:         ansible/playbooks/storage.yml
@@ -615,11 +614,11 @@ servers:
       gateway:                22.150.51.193
       dns_server:             10.7.30.41
       dns_search:             local
-      datacenter:             268BlockA
-      compute_resource:       Cluster1
-      resource_pool_name:     Development PaaS
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
       template_name:          /Templates/centos72
-      vm_base_path:           /Development PaaS
-      vlan:                   VLAN807
-      http_proxy:             http://22.150.32.85:3128      
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY      
 

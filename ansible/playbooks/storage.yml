@@ -91,6 +91,18 @@
     command: ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.admin.keyring
     when: ((inventory_hostname == "{{ server_names_by_group['ceph_monitor'][0] }}") and (cluster_client_admin_keyring_exists.stat.exists == False))
 
+  - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    stat: path=/etc/ceph/ceph.client.docker.keyring
+    register: cluster_client_docker_keyring_exists
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Create the Ceph client docker keyring on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    command: ceph-authtool --create-keyring /etc/ceph/ceph.client.docker.keyring --gen-key --name client.docker --cap mon 'allow r' --cap osd 'allow class-read object_prefix rbd_children, allow rwx pool=docker'
+    when: (cluster_client_docker_keyring_exists.stat.exists == False)
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Add the Ceph client docker keyring to the Ceph cluster monitor keyring on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    command: ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.docker.keyring
+    when: ((inventory_hostname == "{{ server_names_by_group['ceph_monitor'][0] }}") and (cluster_client_docker_keyring_exists.stat.exists == False))
+
   - name: "Check if the /etc/ceph/ceph.mon.keyring file exists"
     stat: path=/etc/ceph/ceph.mon.keyring
     register: local_cluster_monitor_keyring_exists
@@ -159,7 +171,7 @@
   - fail:
       msg: "Failed to find the /etc/ceph/ceph.client.admin.keyring file on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
     when: cluster_client_admin_keyring_exists.stat.exists == False
-    
+
   - name: "Check if the /etc/ceph/ceph.client.admin.keyring file exists"
     stat: path=/etc/ceph/ceph.client.admin.keyring
     register: local_cluster_client_admin_keyring_exists

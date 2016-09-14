@@ -32,35 +32,39 @@ centos:
 end
 
 
-def generate_hosts_file(provider, servers)
+def generate_hosts_file(provider, profile, servers)
 
   hosts = """127.0.0.1 localhost
 ::1 localhost
   
 """
 
-  servers.each do |server|
+  profile['servers'].each do |serverName|
 
-        if ((not server[provider]['ip'].nil?) && (not server[provider]['ip'].empty?) && (not server[provider]['hostname'].nil?) && (not server[provider]['hostname'].empty?))
+    if servers.include?(serverName)
 
-          ip = server[provider]['ip']
+      server = servers[serverName]
 
-          if not (ip.index "/").nil?
+      if ((not server[provider]['ip'].nil?) && (not server[provider]['ip'].empty?) && (not server[provider]['hostname'].nil?) && (not server[provider]['hostname'].empty?))
 
-                ip = ip[0, (ip.index "/")]
+        ip = server[provider]['ip']
 
-          end
+        if not (ip.index "/").nil?
+          ip = ip[0, (ip.index "/")]
+        end
 
-          hosts += "%-15.15s" % ip
+        hosts += "%-15.15s" % ip
+        hosts += " "
+        hosts += server[provider]['hostname']
+
+        if ((not server[provider]['fqdn'].nil?) && (not server[provider]['fqdn'].empty?))
           hosts += " "
-          hosts += server[provider]['hostname']
+          hosts += server[provider]['fqdn']
+        end
 
-          if ((not server[provider]['fqdn'].nil?) && (not server[provider]['fqdn'].empty?))
-            hosts += " "
-            hosts += server[provider]['fqdn']
-          end
+        hosts += "\n"
 
-          hosts += "\n"
+      end
 
     end
 
@@ -151,7 +155,13 @@ else
 end
 
 config_file = YAML.load_file(CONFIG_FILE_PATH)
-servers = config_file['servers']
+servers_config = config_file['servers']
+
+servers = Hash.new
+
+servers_config.each do |server_config|
+  servers[server_config['name']] = server_config
+end
 
 if (profileName.nil? || profileName.empty?)
   raise "Please specify the name of a profile defined in the config.yml file using the --profile=PROFILE_NAME command-line argument"
@@ -189,9 +199,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # ------------------------------------------------------------------------------------
     ansible_groups = Hash.new
 
-    servers.each do |server|
-      
-      if profile['servers'].include?(server['name'])
+    profile['servers'].each do |serverName|
+
+      server = servers[serverName]
+
+      if !server
+        raise "Failed to find the server (%s) for the profile (%s)" % [serverName, profileName]
+      else
+
         server['ansible_groups'].split(/\s*,\s*/).each do |ansible_group|
         
           if !ansible_groups[ansible_group]
@@ -200,7 +215,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         
           ansible_groups[ansible_group] += [server['name']]
         end
-      end	
+      end
     end
 
     # ------------------------------------------------------------------------------------ 
@@ -211,37 +226,36 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     ansible_vars["servers"] = Hash.new
     ansible_vars["server_names_by_group"] = Hash.new
     
-    servers.each do |server|
-      if profile['servers'].include?(server['name'])
+    profile['servers'].each do |serverName|
 
-        server_var = Hash.new
-        
-        if ((not server[provider]['hostname'].nil?) && (not server[provider]['hostname'].empty?))
-          server_var['hostname'] = server[provider]['hostname']
-        end
-        if ((not server[provider]['fqdn'].nil?) && (not server[provider]['fqdn'].empty?))
-          server_var['fqdn'] = server[provider]['fqdn']
-        end
-        if ((not server[provider]['ip'].nil?) && (not server[provider]['ip'].empty?))
-          server_var['ip'] = server[provider]['ip']
-        end
-        if ((not server[provider]['network'].nil?) && (not server[provider]['network'].empty?))
-          server_var['network'] = server[provider]['network']
-        end
-        
-        ansible_vars['servers'][server['name']] = server_var
+      server = servers[serverName]
 
-        server['ansible_groups'].split(/\s*,\s*/).each do |ansible_group|
-
-          if !ansible_vars["server_names_by_group"][ansible_group]
-            ansible_vars["server_names_by_group"][ansible_group] = []
-          end			
-          
-          ansible_vars["server_names_by_group"][ansible_group] += [server['name']]
-
-        end
-
+      server_var = Hash.new
+      
+      if ((not server[provider]['hostname'].nil?) && (not server[provider]['hostname'].empty?))
+        server_var['hostname'] = server[provider]['hostname']
       end
+      if ((not server[provider]['fqdn'].nil?) && (not server[provider]['fqdn'].empty?))
+        server_var['fqdn'] = server[provider]['fqdn']
+      end
+      if ((not server[provider]['ip'].nil?) && (not server[provider]['ip'].empty?))
+        server_var['ip'] = server[provider]['ip']
+      end
+      if ((not server[provider]['network'].nil?) && (not server[provider]['network'].empty?))
+        server_var['network'] = server[provider]['network']
+      end
+      
+      ansible_vars['servers'][server['name']] = server_var
+
+      server['ansible_groups'].split(/\s*,\s*/).each do |ansible_group|
+
+        if !ansible_vars["server_names_by_group"][ansible_group]
+          ansible_vars["server_names_by_group"][ansible_group] = []
+        end			
+        
+        ansible_vars["server_names_by_group"][ansible_group] += [server['name']]
+
+      end      
     end  
     
     # ------------------------------------------------------------------------------------ 
@@ -279,8 +293,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       virtualbox.gui = false
     end    
         
-    servers.each do |server|
-      if profile['servers'].include?(server['name'])
+    profile['servers'].each do |serverName|    
+
+      if servers.include?(serverName)
+
+        server = servers[serverName]
 
         puts "Provisioning server: %s" % server['name']
 
@@ -307,13 +324,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             end
             
             # Write out the /etc/hosts file
-            override.vm.provision "shell", inline: "sudo cat << EOF > /etc/hosts\n%s\nEOF" %  generate_hosts_file(provider, servers)            
+            override.vm.provision "shell", inline: "sudo cat << EOF > /etc/hosts\n%s\nEOF" %  generate_hosts_file(provider, profile, servers)            
 
-						override.vm.provision "ansible" do |ansible|
-		  	  		ansible.playbook = server['ansible_playbook']
-		  	  		ansible.groups = ansible_groups		  	  		
-		  	  		ansible.extra_vars = ansible_vars
-						end     
+            override.vm.provision "ansible" do |ansible|
+              ansible.playbook = server['ansible_playbook']
+              ansible.groups = ansible_groups		  	  		
+              ansible.extra_vars = ansible_vars
+            end     
 
           end
         end
@@ -332,8 +349,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       vmware_fusion.gui = true
     end
     
-    servers.each do |server|
-      if profile['servers'].include?(server['name']) == true
+    profile['servers'].each do |serverName|    
+
+      if servers.include?(serverName)
+
+        server = servers[serverName]
+      
         config.vm.define server['name'] do |server_vm|
           server_vm.vm.provider :vmware_fusion do |vmware_fusion, override|
           
@@ -361,13 +382,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             end
             
             # Write out the /etc/hosts file
-            override.vm.provision "shell", inline: "sudo cat << EOF > /etc/hosts\n%s\nEOF" %  generate_hosts_file(provider, servers)   
+            override.vm.provision "shell", inline: "sudo cat << EOF > /etc/hosts\n%s\nEOF" %  generate_hosts_file(provider, profile, servers)   
             
-						override.vm.provision "ansible" do |ansible|
-		  	  		ansible.playbook = server['ansible_playbook']
-		  	  		ansible.groups = ansible_groups
-		  	  		ansible.extra_vars = ansible_vars
-						end                     
+            override.vm.provision "ansible" do |ansible|
+              ansible.playbook = server['ansible_playbook']
+              ansible.groups = ansible_groups
+              ansible.extra_vars = ansible_vars
+            end                     
                     
           end
         end
@@ -389,8 +410,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       vsphere.insecure = config_file['providers']['vsphere']['insecure']
     end
 
-    servers.each do |server|      
-      if profile['servers'].include?(server['name']) == true
+    profile['servers'].each do |serverName|    
+
+      if servers.include?(serverName)
+
+        server = servers[serverName]
+      
         config.vm.define server['name'] do |server_vm|
           server_vm.vm.provider :vsphere do |vsphere, override|
 
@@ -423,7 +448,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             end
         
             # Write out the /etc/hosts file
-            override.vm.provision "shell", inline: "sudo cat << EOF > /etc/hosts\n%s\nEOF" %  generate_hosts_file(provider, servers)            
+            override.vm.provision "shell", inline: "sudo cat << EOF > /etc/hosts\n%s\nEOF" %  generate_hosts_file(provider, profile, servers)            
 
             # Setup the NTP configuration for the vSphere provider
             override.vm.provision "shell", inline: "sudo cat << EOF > /tmp/ntp.conf\n%s\nEOF" %  generate_vsphere_ntp_config()
@@ -436,14 +461,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
               override.vm.provision "shell", inline: "sudo chmod a+x /etc/profile.d/proxy.sh"        
             end
         
-						override.vm.provision "ansible" do |ansible|
-		  	  		ansible.playbook = server['ansible_playbook']
-  	  	  		ansible.groups = ansible_groups
-		  	  		ansible.extra_vars = ansible_vars
-						end                     
+            override.vm.provision "ansible" do |ansible|
+              ansible.playbook = server['ansible_playbook']
+              ansible.groups = ansible_groups
+              ansible.extra_vars = ansible_vars
+            end                     
         
           end
         end
+        
       end
     end
   end
