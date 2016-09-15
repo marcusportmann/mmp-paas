@@ -194,7 +194,7 @@
     when: local_cluster_client_docker_keyring_exists.stat.exists == False
     delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
   - name: "Copy the ceph.client.docker.keyring file to the Docker host"
-    copy: src="/tmp/{{ inventory_hostname }}/etc/ceph/ceph.client.docker.keyring" dest=/etc/ceph/ owner=root group=ceph mode=0640
+    copy: src="/tmp/{{ inventory_hostname }}/etc/ceph/ceph.client.docker.keyring" dest=/etc/ceph/ owner=root group=root mode=0640
     when: local_cluster_client_docker_keyring_exists.stat.exists == False
   - name: "Set the permissions for the /etc/ceph/ceph.client.docker.keyring file"
     file: path=/etc/ceph/ceph.client.docker.keyring state=file owner=root group=root mode=0640
