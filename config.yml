@@ -78,7 +78,7 @@ servers:
 
   - name:                     paas-host-1
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_manager,docker_ceph_client
+    ansible_groups:           docker_host,docker_swarm_manager,docker_ceph_client,docker_ceph_plugin_build
     virtualbox:
       cpus:                   1
       ram:                    512
@@ -122,7 +122,7 @@ servers:
 
   - name:                     paas-host-2
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_manager
+    ansible_groups:           docker_host,docker_swarm_manager,docker_ceph_client
     virtualbox:
       cpus:                   1
       ram:                    512
@@ -166,7 +166,7 @@ servers:
 
   - name:                     paas-host-3
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_manager
+    ansible_groups:           docker_host,docker_swarm_manager,docker_ceph_client
     virtualbox:
       cpus:                   1
       ram:                    512
@@ -210,7 +210,7 @@ servers:
 
   - name:                     paas-host-4
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_worker
+    ansible_groups:           docker_host,docker_swarm_worker,docker_ceph_client
     virtualbox:
       cpus:                   1
       ram:                    512
@@ -254,7 +254,7 @@ servers:
 
   - name:                     paas-host-5
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_worker
+    ansible_groups:           docker_host,docker_swarm_worker,docker_ceph_client
     virtualbox:
       cpus:                   1
       ram:                    512
@@ -298,7 +298,7 @@ servers:
 
   - name:                     paas-host-6
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_worker
+    ansible_groups:           docker_host,docker_swarm_worker,docker_ceph_client
     virtualbox:
       cpus:                   1
       ram:                    512
