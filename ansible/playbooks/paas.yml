@@ -5,18 +5,18 @@
   become: yes
   become_user: root
   tasks:
-  - name: Create the /etc/pki/tls/private/paas directory
-    file: path=/etc/pki/tls/private/paas state=directory owner=root group=root mode=0770
-  - name: Create the /etc/pki/tls/certs/paas directory
-    file: path=/etc/pki/tls/certs/paas state=directory owner=root group=root mode=0770
-  - name: Copy the private key for the docker registry to the /etc/pki/tls/private/paas directory
-    copy: src=../certificates/paas/{{ inventory_hostname }}.key dest=/etc/pki/tls/private/paas/{{ inventory_hostname }}.key owner=root group=root mode=0640
-  - name: Copy the certificate for the docker host to the /etc/pki/tls/certs/paas directory
-    copy: src=../certificates/paas/{{ inventory_hostname }}.crt dest=/etc/pki/tls/certs/paas/{{ inventory_hostname }}.crt owner=root group=root mode=0644
-  - name: Copy the root-ca.crt certificate to the /etc/pki/tls/certs/paas directory
-    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/pki/tls/certs/paas/root-ca.crt owner=root group=root mode=0644
-  - name: Copy the paas-ca.crt certificate to the /etc/pki/tls/certs/paas directory
-    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/pki/tls/certs/paas/paas-ca.crt owner=root group=root mode=0644
+  - name: Create the /etc/pki/tls/private/docker directory
+    file: path=/etc/pki/tls/private/docker state=directory owner=root group=root mode=0770
+  - name: Create the /etc/pki/tls/certs/docker directory
+    file: path=/etc/pki/tls/certs/docker state=directory owner=root group=root mode=0770
+  - name: Copy the private key for the docker registry to the /etc/pki/tls/private/docker directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.key dest=/etc/pki/tls/private/docker/{{ inventory_hostname }}.key owner=root group=root mode=0640
+  - name: Copy the certificate for the docker host to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.crt dest=/etc/pki/tls/certs/docker/{{ inventory_hostname }}.crt owner=root group=root mode=0644
+  - name: Copy the root-ca.crt certificate to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/pki/tls/certs/docker/root-ca.crt owner=root group=root mode=0644
+  - name: Copy the paas-ca.crt certificate to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/pki/tls/certs/docker/paas-ca.crt owner=root group=root mode=0644
   - name: Add the Docker YUM Repository
     yum_repository:
       name: docker
@@ -55,18 +55,18 @@
   become: yes
   become_user: root
   tasks:
-  - name: Create the /etc/pki/tls/private/paas directory
-    file: path=/etc/pki/tls/private/paas state=directory owner=root group=root mode=0770
-  - name: Create the /etc/pki/tls/certs/paas directory
-    file: path=/etc/pki/tls/certs/paas state=directory owner=root group=root mode=0770
-  - name: Copy the private key for the docker host to the /etc/pki/tls/private/paas directory
-    copy: src=../certificates/paas/{{ inventory_hostname }}.key dest=/etc/pki/tls/private/paas/{{ inventory_hostname }}.key owner=root group=root mode=0640
-  - name: Copy the certificate for the docker host to the /etc/pki/tls/certs/paas directory
-    copy: src=../certificates/paas/{{ inventory_hostname }}.crt dest=/etc/pki/tls/certs/paas/{{ inventory_hostname }}.crt owner=root group=root mode=0644
-  - name: Copy the root-ca.crt certificate to the /etc/pki/tls/certs/paas directory
-    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/pki/tls/certs/paas/root-ca.crt owner=root group=root mode=0644
-  - name: Copy the paas-ca.crt certificate to the /etc/pki/tls/certs/paas directory
-    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/pki/tls/certs/paas/paas-ca.crt owner=root group=root mode=0644
+  - name: Create the /etc/pki/tls/private/docker directory
+    file: path=/etc/pki/tls/private/docker state=directory owner=root group=root mode=0770
+  - name: Create the /etc/pki/tls/certs/docker directory
+    file: path=/etc/pki/tls/certs/docker state=directory owner=root group=root mode=0770
+  - name: Copy the private key for the docker host to the /etc/pki/tls/private/docker directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.key dest=/etc/pki/tls/private/docker/{{ inventory_hostname }}.key owner=root group=root mode=0640
+  - name: Copy the certificate for the docker host to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.crt dest=/etc/pki/tls/certs/docker/{{ inventory_hostname }}.crt owner=root group=root mode=0644
+  - name: Copy the root-ca.crt certificate to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/pki/tls/certs/docker/root-ca.crt owner=root group=root mode=0644
+  - name: Copy the paas-ca.crt certificate to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/pki/tls/certs/docker/paas-ca.crt owner=root group=root mode=0644
   - name: Create the directory /etc/docker/certs.d/paas-registry:5000 if required
     file: path=/etc/docker/certs.d/paas-registry:5000 state=directory owner=root group=root mode=0755 recurse=yes
   - name: Copy the root-ca.crt certificate to the /etc/docker/certs.d/paas-registry:5000 directory

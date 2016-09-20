@@ -17,9 +17,13 @@ e.g.
 
 vagrant --profile=paas_minimal up --provider=virtualbox --no-parallel
 
+vagrant --profile=developer up --provider=vmware_fusion --no-parallel
+
 or
 
 vagrant --profile=paas_minimal destroy --force
+
+vagrant --profile=developer destroy --force
 ```
 
 You can connect to a server using SSH with the username **vagrant** and the password **vagrant**. This user is able to **su** to the **root** user. 

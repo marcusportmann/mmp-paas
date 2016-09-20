@@ -68,7 +68,7 @@
     file: path=/etc/ceph/cluster_id state=file owner=root group=ceph mode=0640
     
   - name: Create the /etc/ceph/ceph.conf file
-    template: src=../templates/ceph.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
+    template: src=../templates/ceph.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=ceph mode=0644   
     
   - name: "Check if the /etc/ceph/ceph.mon.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
     stat: path=/etc/ceph/ceph.mon.keyring
@@ -78,6 +78,10 @@
     command: ceph-authtool --create-keyring /etc/ceph/ceph.mon.keyring --gen-key --name mon. --cap mon 'allow *'
     when: (cluster_monitor_keyring_exists.stat.exists == False)
     delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Set the permissions for the /etc/ceph/ceph.mon.keyring file"
+    file: path=/etc/ceph/ceph.mon.keyring state=file owner=root group=ceph mode=0640
+    when: (cluster_monitor_keyring_exists.stat.exists == False)
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"    
     
   - name: "Check if the /etc/ceph/ceph.client.admin.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
     stat: path=/etc/ceph/ceph.client.admin.keyring
@@ -90,6 +94,9 @@
   - name: "Add the Ceph client admin keyring to the Ceph cluster monitor keyring on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
     command: ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.admin.keyring
     when: ((inventory_hostname == "{{ server_names_by_group['ceph_monitor'][0] }}") and (cluster_client_admin_keyring_exists.stat.exists == False))
+  - name: "Set the permissions for the /etc/ceph/ceph.client.admin.keyring file"
+    file: path=/etc/ceph/ceph.client.admin.keyring state=file owner=root group=ceph mode=0640
+    when: (inventory_hostname == "{{ server_names_by_group['ceph_monitor'][0] }}")
 
   - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
     stat: path=/etc/ceph/ceph.client.docker.keyring
@@ -102,6 +109,9 @@
   - name: "Add the Ceph client docker keyring to the Ceph cluster monitor keyring on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
     command: ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.docker.keyring
     when: ((inventory_hostname == "{{ server_names_by_group['ceph_monitor'][0] }}") and (cluster_client_docker_keyring_exists.stat.exists == False))
+  - name: "Set the permissions for the /etc/ceph/ceph.client.docker.keyring file"
+    file: path=/etc/ceph/ceph.client.docker.keyring state=file owner=root group=ceph mode=0640
+    when: (inventory_hostname == "{{ server_names_by_group['ceph_monitor'][0] }}")
 
   - name: "Check if the /etc/ceph/ceph.mon.keyring file exists"
     stat: path=/etc/ceph/ceph.mon.keyring
@@ -162,7 +172,7 @@
     file: path=/etc/ceph/cluster_id state=file owner=root group=ceph mode=0640
   
   - name: Create the /etc/ceph/ceph.conf file
-    template: src=../templates/ceph.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
+    template: src=../templates/ceph.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=ceph mode=0644   
 
   - name: "Check if the /etc/ceph/ceph.client.admin.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
     stat: path=/etc/ceph/ceph.client.admin.keyring

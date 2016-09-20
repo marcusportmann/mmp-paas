@@ -17,8 +17,8 @@ http:
     net: tcp
     prefix: /
     tls:
-        certificate: /etc/pki/tls/certs/paas/{{ inventory_hostname }}.crt
-        key: /etc/pki/tls/private/paas/{{ inventory_hostname }}.key
+        certificate: /etc/pki/tls/certs/docker/{{ inventory_hostname }}.crt
+        key: /etc/pki/tls/private/docker/{{ inventory_hostname }}.key
     debug:
         addr: :5001
     secret: asecretforlocaldevelopment

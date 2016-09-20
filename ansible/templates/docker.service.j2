@@ -7,7 +7,7 @@ Requires=docker.socket docker-tcp.socket
 [Service]
 Type=notify
 Environment="DOCKER_OPTIONS="
-Environment="DOCKER_NETWORK_OPTIONS=--tlsverify --tlscacert=/etc/pki/tls/certs/paas/paas-ca.crt --tlscert=/etc/pki/tls/certs/paas/{{ inventory_hostname }}.crt --tlskey=/etc/pki/tls/private/paas/{{ inventory_hostname }}.key"
+Environment="DOCKER_NETWORK_OPTIONS=--tlsverify --tlscacert=/etc/pki/tls/certs/docker/paas-ca.crt --tlscert=/etc/pki/tls/certs/docker/{{ inventory_hostname }}.crt --tlskey=/etc/pki/tls/private/docker/{{ inventory_hostname }}.key"
 Environment="DOCKER_STORAGE_OPTIONS=-s overlay"
 # The default is not to use systemd for cgroups because the delegate issues still
 # exists and systemd currently does not support the cgroup feature set required

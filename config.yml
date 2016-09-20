@@ -4,6 +4,9 @@ variables:
     values: 
       - 16a68923-16d8-4003-af4c-ebabb08f1c4b
 profiles:
+  - name: developer
+    servers:
+      - developer
   - name: paas_minimal
     servers:
       - storage-monitor-1
@@ -32,6 +35,52 @@ providers:
     host:                     INSERT_VCENTER_IP_HERE
     insecure:                 true
 servers:
+  - name:                     developer
+    ansible_playbook:         ansible/playbooks/developer.yml
+    ansible_groups:           developer_ceph,developer_docker
+    virtualbox:
+      cpus:                   2
+      ram:                    2048
+      swap:                   2048
+      hostname:               developer
+      fqdn:                   developer.local
+      dhcp:                   yes
+      ip:                     192.168.100.40
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+    vmware_fusion:
+      cpus:                   2
+      ram:                    2048
+      swap:                   2048
+      hostname:               developer
+      fqdn:                   developer.local
+      dhcp:                   yes
+      ip:                     192.168.100.40
+      netmask:                255.255.255.0
+      network:                192.168.100.0/24
+      gateway:                192.168.100.2
+      dns_server:             192.168.100.2
+      dns_search:             local
+    vsphere:
+      cpus:                   4
+      ram:                    8192
+      swap:                   4096
+      hostname:               developer
+      fqdn:                   developer.local
+      dhcp:                   no
+      ip:                     22.150.51.231
+      netmask:                255.255.255.192
+      gateway:                22.150.51.193
+      dns_server:             10.7.30.41
+      dns_search:             local
+      datacenter:             INSERT_VSPHERE_DATACENTER
+      compute_resource:       INSERT_VSPHERE_COMPUTE_RESOURCE
+      resource_pool_name:     INSERT_VSPHERE_RESOURCE_POOL_NAME
+      template_name:          /Templates/centos72
+      vm_base_path:           INSERT_VSPHERE_VM_BASE_PATH
+      vlan:                   INSERT_VSPHERE_VLAN
+      http_proxy:             INSERT_PROXY
+      
   - name:                     paas-registry
     ansible_playbook:         ansible/playbooks/paas.yml
     ansible_groups:           docker_registry
