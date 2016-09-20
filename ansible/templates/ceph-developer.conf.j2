@@ -1,0 +1,113 @@
+[global]
+fsid = {{ ceph_cluster_id }}
+
+public network = {{ servers['developer'].network }}
+
+cluster network = {{ servers['developer'].network }}
+
+
+# If enabled, the Ceph Storage Cluster daemons (i.e., ceph-mon, ceph-osd,
+# and ceph-mds) must authenticate with each other.
+# Type: String (optional); Valid settings are "cephx" or "none".
+# (Default: cephx)
+auth cluster required = cephx
+
+# If enabled, the Ceph Storage Cluster daemons require Ceph Clients to
+# authenticate with the Ceph Storage Cluster in order to access Ceph
+# services.
+# Type: String (optional); Valid settings are "cephx" or "none".
+# (Default: cephx)
+auth service required = cephx
+
+# If enabled, the Ceph Client requires the Ceph Storage Cluster to
+# authenticate with the Ceph Client.
+# Type: String (optional); Valid settings are "cephx" or "none".
+# (Default: cephx)
+auth client required = cephx
+
+
+# The IDs of initial monitors in a cluster during startup.
+# If specified, Ceph requires an odd number of monitors to form an
+# initial quorum (e.g., 3).
+# Type: String
+# (Default: None)
+mon initial members = developer
+
+
+mon host = {{ servers['developer'].fqdn }}
+    
+mon addr = {{ servers['developer'].ip }}:6789
+
+
+
+## Replication level, number of data copies.
+# Type: 32-bit Integer
+# (Default: 3)
+osd pool default size = 1
+
+
+## Replication level in degraded state, less than 'osd pool default size' value.
+# Sets the minimum number of written replicas for objects in the
+# pool in order to acknowledge a write operation to the client. If
+# minimum is not met, Ceph will not acknowledge the write to the
+# client. This setting ensures a minimum number of replicas when
+# operating in degraded mode.
+# Type: 32-bit Integer
+# (Default: 0), which means no particular minimum. If 0, minimum is size - (size / 2).
+osd pool default min size = 0
+
+
+## Ensure you have a realistic number of placement groups. We recommend
+## approximately 100 per OSD. E.g., total number of OSDs multiplied by 100
+## divided by the number of replicas (i.e., osd pool default size). So for
+## 10 OSDs and osd pool default size = 3, we'd recommend approximately
+## (100 * 10) / 3 = 333
+
+# Description: The default number of placement groups for a pool. The
+#              default value is the same as pg_num with mkpool.
+# Type: 32-bit Integer
+# (Default: 8)
+osd pool default pg num    = 8
+
+# Description: The default number of placement groups for placement for a
+#              pool. The default value is the same as pgp_num with mkpool.
+#              PG and PGP should be equal (for now).
+# Type: 32-bit Integer
+# (Default: 8)
+osd pool default pgp num   = 8
+
+# The default CRUSH ruleset to use when creating a pool
+# Type: 32-bit Integer
+# (Default: 0)
+osd pool default crush rule = 0
+
+# The bucket type to use for chooseleaf in a CRUSH rule.
+# Uses ordinal rank rather than name.
+# Type: 32-bit Integer
+# (Default: 1) Typically a host containing one or more Ceph OSD Daemons.
+osd crush chooseleaf type = 1
+
+
+# The size of the journal in megabytes. If this is 0,
+# and the journal is a block device, the entire block device is used.
+# Since v0.54, this is ignored if the journal is a block device,
+# and the entire block device is used.
+# Type: 32-bit Integer
+# (Default: 5120)
+# Recommended: Begin with 1GB. Should be at least twice the product
+# of the expected speed multiplied by "filestore max sync interval".
+osd journal size = 1000
+
+
+[client]
+keyring = /etc/ceph/ceph.client.admin.keyring
+
+
+
+
+
+
+        
+        
+
+

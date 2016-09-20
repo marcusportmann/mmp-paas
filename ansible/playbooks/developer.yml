@@ -1,0 +1,350 @@
+---
+
+- hosts: developer_ceph
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Install the latest yum-plugin-priorities and epel-release packages
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - yum-plugin-priorities
+      - epel-release
+
+  - name: Add the ceph YUM Repository
+    yum_repository:
+      name: ceph
+      file: ceph
+      description: Ceph packages for $basearch
+      baseurl: https://download.ceph.com/rpm-jewel/el7/$basearch
+      gpgkey: https://download.ceph.com/keys/release.asc
+      gpgcheck: yes
+      enabled: yes
+      priority: 2
+  - name: Add the ceph-noarch YUM Repository
+    yum_repository:
+      name: ceph-noarch
+      file: ceph
+      description: Ceph noarch packages
+      baseurl: https://download.ceph.com/rpm-jewel/el7/noarch
+      gpgkey: https://download.ceph.com/keys/release.asc
+      gpgcheck: yes
+      enabled: yes
+      priority: 2
+  - name: Add the ceph-noarch YUM Repository
+    yum_repository:
+      name: ceph-sources
+      file: ceph
+      description: Ceph source packages
+      baseurl: https://download.ceph.com/rpm-jewel/el7/SRPMS
+      gpgkey: https://download.ceph.com/keys/release.asc
+      gpgcheck: yes
+      enabled: yes
+      priority: 2
+
+  - name: Install the required packages for Ceph
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - snappy
+      - leveldb
+      - gdisk
+      - python-argparse
+      - gperftools-libs
+      - ceph
+
+  - name: Open TCP port 6789 for Ceph monitor connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="6789" accept' permanent=true state=enabled immediate=true
+  - name: Open TCP port 6789 for Ceph OSD and Metadata Server connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="6800-7300" accept' permanent=true state=enabled immediate=true
+    
+  - name: "Save the UUID for the Ceph storage cluster in the /etc/ceph/cluster_id file"
+    shell: echo "{{ ceph_cluster_id }}" > /etc/ceph/cluster_id  
+  - name: "Set the permissions for the /etc/ceph/cluster_id file"
+    file: path=/etc/ceph/cluster_id state=file owner=root group=ceph mode=0640
+
+  - name: Create the /etc/ceph/ceph.conf file
+    template: src=../templates/ceph-developer.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=ceph mode=0640   
+    
+  - name: "Check if the /etc/ceph/ceph.mon.keyring file exists"
+    stat: path=/etc/ceph/ceph.mon.keyring
+    register: cluster_monitor_keyring_exists
+  - name: "Create the Ceph cluster monitor keyring"
+    command: ceph-authtool --create-keyring /etc/ceph/ceph.mon.keyring --gen-key --name mon. --cap mon 'allow *'
+    when: (cluster_monitor_keyring_exists.stat.exists == False)
+  - name: "Set the permissions for the /etc/ceph/ceph.mon.keyring file"
+    file: path=/etc/ceph/ceph.mon.keyring state=file owner=root group=ceph mode=0640
+    
+  - name: "Check if the /etc/ceph/ceph.client.admin.keyring file exists"
+    stat: path=/etc/ceph/ceph.client.admin.keyring
+    register: cluster_client_admin_keyring_exists
+  - name: "Create the Ceph client admin keyring"
+    command: ceph-authtool --create-keyring /etc/ceph/ceph.client.admin.keyring --gen-key --name client.admin --set-uid=0 --cap mon 'allow *' --cap osd 'allow *' --cap mds 'allow'
+    when: (cluster_client_admin_keyring_exists.stat.exists == False)
+  - name: "Add the Ceph client admin keyring to the Ceph cluster monitor keyring"
+    command: ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.admin.keyring
+    when: (cluster_client_admin_keyring_exists.stat.exists == False)
+  - name: "Set the permissions for the /etc/ceph/ceph.client.admin.keyring file"
+    file: path=/etc/ceph/ceph.client.admin.keyring state=file owner=root group=ceph mode=0640
+
+  - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists"
+    stat: path=/etc/ceph/ceph.client.docker.keyring
+    register: cluster_client_docker_keyring_exists
+  - name: "Create the Ceph client docker keyring"
+    command: ceph-authtool --create-keyring /etc/ceph/ceph.client.docker.keyring --gen-key --name client.docker --cap mon 'allow r' --cap osd 'allow class-read object_prefix rbd_children, allow rwx pool=docker'
+    when: (cluster_client_docker_keyring_exists.stat.exists == False)
+  - name: "Add the Ceph client docker keyring to the Ceph cluster monitor keyring"
+    command: ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /etc/ceph/ceph.client.docker.keyring
+    when: (cluster_client_docker_keyring_exists.stat.exists == False)
+  - name: "Set the permissions for the /etc/ceph/ceph.client.docker.keyring file"
+    file: path=/etc/ceph/ceph.client.docker.keyring state=file owner=root group=ceph mode=0640
+
+  - name: "Generate the Ceph cluster monitor map"
+    command: monmaptool  --create --fsid "{{ ceph_cluster_id }}" --clobber /etc/ceph/monmap
+  - name: "Add the Ceph monitor node to the Ceph cluster monitor map"
+    command: monmaptool  --add "{{ inventory_hostname }}" "{{ servers[inventory_hostname].ip }}":6789 --clobber /etc/ceph/monmap
+  - name: "Create the /var/lib/ceph/mon/ceph-{{ inventory_hostname }} directory"
+    file: path="/var/lib/ceph/mon/ceph-{{ inventory_hostname }}" state=directory owner=ceph group=ceph mode=0750
+  - name: "Populate the monitor daemon with the monitor map and keyring"
+    command: ceph-mon --mkfs -i "{{ inventory_hostname }}" --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring
+    become: true
+    become_user: ceph    
+  - name: "Touch the /var/lib/ceph/mon/ceph-{{ inventory_hostname }}/done file"
+    file: path="/var/lib/ceph/mon/ceph-{{ inventory_hostname }}/done" state=touch owner=ceph group=ceph mode=0640
+  - name: "Enable the monitor daemon"
+    service: name="ceph-mon@{{ inventory_hostname }}" enabled=yes    
+  - name: "Start the monitor daemon"
+    service: name="ceph-mon@{{ inventory_hostname }}" state=started   
+
+  - name: "Check if the /etc/ceph/osd_id file exists"
+    stat: path=/etc/ceph/osd_id
+    register: osd_id_exists
+  - name: "Generate and save the UUID for the OSD node"
+    shell: uuidgen > /etc/ceph/osd_id
+    when: osd_id_exists.stat.exists == False
+  - name: "Retrieve the UUID for the OSD node"
+    command: cat /etc/ceph/osd_id
+    register: osd_id
+  - name: "Set the permissions for the /etc/ceph/osd_id file"
+    file: path=/etc/ceph/osd_id state=file owner=root group=ceph mode=0640
+    
+  - name: "Check if the /etc/ceph/osd_number file exists"
+    stat: path=/etc/ceph/osd_number
+    register: osd_number_exists
+  - name: "Create the Ceph OSD and save the OSD number"
+    shell: ceph osd create "{{ osd_id.stdout }}" > /etc/ceph/osd_number
+    when: osd_number_exists.stat.exists == False    
+  - name: "Retrieve the OSD number for the OSD node"
+    command: cat /etc/ceph/osd_number
+    register: osd_number
+  - name: "Create the /var/lib/ceph/osd/ceph-{{ osd_number.stdout }} OSD data directory"
+    file: path="/var/lib/ceph/osd/ceph-{{ osd_number.stdout }}" state=directory owner=ceph group=ceph mode=0750
+    when: osd_number_exists.stat.exists == False
+  - name: "Initialise the OSD data directory"
+    command: ceph-osd -i "{{ osd_number.stdout }}" --mkfs --mkkey --osd-uuid "{{ osd_id.stdout }}"
+    become: true
+    become_user: ceph    
+    when: osd_number_exists.stat.exists == False
+  - name: "Register the OSD authentication key"
+    command: ceph auth add osd."{{ osd_number.stdout }}" osd 'allow *' mon 'allow profile osd' -i /var/lib/ceph/osd/ceph-"{{ osd_number.stdout }}"/keyring
+    when: osd_number_exists.stat.exists == False
+  - name: "Add the Ceph node to the CRUSH map"
+    command: ceph osd crush add-bucket "{{ servers[inventory_hostname].hostname }}" host
+    when: osd_number_exists.stat.exists == False
+  - name: "Place the Ceph node under the root default"
+    command: ceph osd crush move "{{ servers[inventory_hostname].hostname }}" root=default
+    when: osd_number_exists.stat.exists == False
+  - name: "Add the OSD to the CRUSH map so that it can begin receiving data" 
+    command: ceph osd crush add osd."{{ osd_number.stdout }}" 1.0 host="{{ servers[inventory_hostname].hostname }}"
+    when: osd_number_exists.stat.exists == False
+  - name: "Enable the OSD daemon"
+    service: name="ceph-osd@{{ osd_number.stdout }}" enabled=yes    
+  - name: "Start the OSD daemon"
+    service: name="ceph-osd@{{ osd_number.stdout }}" state=started
+  - name: "Create the docker Ceph pool"
+    command: ceph osd pool create docker 128
+    when: (osd_number_exists.stat.exists == False)
+
+
+- hosts: developer_docker
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Create the /etc/pki/tls/private/docker directory
+    file: path=/etc/pki/tls/private/docker state=directory owner=root group=root mode=0770
+  - name: Create the /etc/pki/tls/certs/docker directory
+    file: path=/etc/pki/tls/certs/docker state=directory owner=root group=root mode=0770
+  - name: Copy the private key for the docker registry to the /etc/pki/tls/private/docker directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.key dest=/etc/pki/tls/private/docker/{{ inventory_hostname }}.key owner=root group=root mode=0640
+  - name: Copy the certificate for the docker host to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/paas/{{ inventory_hostname }}.crt dest=/etc/pki/tls/certs/docker/{{ inventory_hostname }}.crt owner=root group=root mode=0644
+  - name: Copy the root-ca.crt certificate to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/pki/tls/certs/docker/root-ca.crt owner=root group=root mode=0644
+  - name: Copy the paas-ca.crt certificate to the /etc/pki/tls/certs/docker directory
+    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/pki/tls/certs/docker/paas-ca.crt owner=root group=root mode=0644
+  - name: Create the directory /etc/docker/certs.d/developer:5000 if required
+    file: path=/etc/docker/certs.d/developer:5000 state=directory owner=root group=root mode=0755 recurse=yes
+  - name: Copy the root-ca.crt certificate to the /etc/docker/certs.d/developer:5000 directory
+    copy: src=../certificates/root-ca/root-ca.crt dest=/etc/docker/certs.d/developer:5000/root-ca.crt owner=root group=root mode=0644
+  - name: Copy the paas-ca.crt certificate to the /etc/docker/certs.d/developer:5000 directory
+    copy: src=../certificates/paas-ca/paas-ca.crt dest=/etc/docker/certs.d/developer:5000/paas-ca.crt owner=root group=root mode=0644
+
+  - name: Add the Docker YUM Repository
+    yum_repository:
+      name: docker
+      description: Docker Repository
+      baseurl: https://yum.dockerproject.org/repo/main/centos/$releasever/
+      gpgkey: https://yum.dockerproject.org/gpg
+      gpgcheck: yes
+
+  - name: Install the Docker packages
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - docker-distribution
+      - docker-engine
+  - name: Install the latest httpd-tools package
+    yum: 
+      name: httpd-tools
+      state: latest
+
+  - name: Open TCP port 5000 for Docker Registry connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="5000" accept' permanent=true state=enabled immediate=true
+  - name: Open TCP port 5001 for Docker Registry connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="5001" accept' permanent=true state=enabled immediate=true
+  - name: Open TCP port 2376 for Docker Remote API connections
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="2376" accept' permanent=true state=enabled immediate=true
+  - name: Open TCP port 2377 for Docker Swarm connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="2377" accept' permanent=true state=enabled immediate=true
+  - name: Open UDP port 4789 for Docker Swarm connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" port protocol="udp" port="4789" accept' permanent=true state=enabled immediate=true
+  - name: Open TCP port 4789 for Docker Swarm connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="4789" accept' permanent=true state=enabled immediate=true
+  - name: Open UDP port 7946 for Docker Swarm connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" port protocol="udp" port="7946" accept' permanent=true state=enabled immediate=true
+  - name: Open TCP port 7946 for Docker Swarm connections from other hosts
+    firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="7946" accept' permanent=true state=enabled immediate=true
+
+  - name: Create the /etc/docker-distribution/registry/htpasswd file used to provide authenticated access to the Docker Registry
+    command: htpasswd -cbB -C 10 /etc/docker-distribution/registry/htpasswd paas paas
+  - name: Move the /etc/docker-distribution/registry/config.yml file to /etc/docker-distribution/registry/config.yml.original
+    command: creates="/etc/docker-distribution/registry/config.yml.original" mv /etc/docker-distribution/registry/config.yml /etc/docker-distribution/registry/config.yml.original      
+  - name: Create the /etc/docker-distribution/registry/config.yml file
+    template: src=../templates/config.yml.j2 dest=/etc/docker-distribution/registry/config.yml owner=root group=root mode=0644  
+  - name: Enable the docker-distribution service
+    service: name=docker-distribution enabled=yes
+  - name: Stop the docker-distribution service
+    service: name=docker-distribution state=stopped    
+  - name: Start the docker-distribution service
+    service: name=docker-distribution state=started
+
+  - name: Create the /usr/lib/systemd/system/docker.socket file
+    template: src=../templates/docker.socket.j2 dest=/usr/lib/systemd/system/docker.socket owner=root group=root mode=0644  
+  - name: Create the /usr/lib/systemd/system/docker-tcp.socket file
+    template: src=../templates/docker-tcp.socket.j2 dest=/usr/lib/systemd/system/docker-tcp.socket owner=root group=root mode=0644  
+  - name: Create the /usr/lib/systemd/system/docker.service file
+    template: src=../templates/docker.service.j2 dest=/usr/lib/systemd/system/docker.service owner=root group=root mode=0644
+  - name: Enable the docker.socket
+    service: name=docker.socket enabled=yes    
+  - name: Enable the docker-tcp.socket
+    service: name=docker-tcp.socket enabled=yes    
+  - name: Enable the docker service
+    service: name=docker enabled=yes
+  - name: Stop the docker service
+    service: name=docker state=stopped    
+  - name: Start the docker service
+    service: name=docker state=started    
+  - name: "Retrieve the Docker Swarm cluster manager token"
+    shell: docker swarm join-token -q manager 2>&1 ; true
+    register: docker_swarm_manager_token
+    ignore_errors: True
+  - name: "Create the Docker Swarm cluster"
+    command: docker swarm init --advertise-addr {{ servers['developer'].ip }}
+    when: (docker_swarm_manager_token.stdout.find("This node is not a swarm manager") >= 0)  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- hosts: docker_ceph_client
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+
+  - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    stat: path=/etc/ceph/ceph.client.docker.keyring
+    register: cluster_client_docker_keyring_exists
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - fail:
+      msg: "Failed to find the /etc/ceph/ceph.client.docker.keyring file on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    when: cluster_client_docker_keyring_exists.stat.exists == False
+    
+  - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists"
+    stat: path=/etc/ceph/ceph.client.docker.keyring
+    register: local_cluster_client_docker_keyring_exists
+  - name: "Fetch the /etc/ceph/ceph.client.docker.keyring file from the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
+    fetch: src=/etc/ceph/ceph.client.docker.keyring dest=/tmp
+    when: local_cluster_client_docker_keyring_exists.stat.exists == False
+    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
+  - name: "Copy the ceph.client.docker.keyring file to the Docker host"
+    copy: src="/tmp/{{ inventory_hostname }}/etc/ceph/ceph.client.docker.keyring" dest=/etc/ceph/ owner=root group=root mode=0640
+    when: local_cluster_client_docker_keyring_exists.stat.exists == False
+  - name: "Set the permissions for the /etc/ceph/ceph.client.docker.keyring file"
+    file: path=/etc/ceph/ceph.client.docker.keyring state=file owner=root group=root mode=0640
+  - name: Install the latest Ceph client packages
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - ceph-common
+      - librados2 
+      - librbd1
+  - name: Create the /etc/ceph/ceph.conf file
+    template: src=../templates/ceph-docker.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
+  - name: "Copy the rbd-docker-plugin"
+    copy: src="../files/rbd-docker-plugin" dest=/usr/bin owner=root group=root mode=0770
+
+
+- hosts: docker_ceph_plugin_build
+  remote_user: vagrant
+  become: yes
+  become_user: root
+  tasks:
+  - name: Install the latest packages required to build the Docker Ceph plugin
+    yum: 
+      name: "{{item}}"
+      state: latest
+    with_items:
+      - ceph-common
+      - librados2-devel 
+      - librbd1-devel
+      - git
+      - go
+  - name: Create the /tmp/go directory
+    file: path=/tmp/go state=directory owner=root group=root mode=0770
+  - name: Build the docker_ceph_driver
+    shell: GOPATH=/tmp/go go get github.com/marcusportmann/rbd-docker-plugin
+
+
+
+
+
+      
+
+
+  
