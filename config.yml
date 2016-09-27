@@ -37,7 +37,7 @@ providers:
 servers:
   - name:                     developer
     ansible_playbook:         ansible/playbooks/developer.yml
-    ansible_groups:           developer_ceph,developer_docker
+    ansible_groups:           developer_ceph,developer_docker,developer_desktop
     virtualbox:
       cpus:                   2
       ram:                    2048
@@ -127,7 +127,7 @@ servers:
 
   - name:                     paas-host-1
     ansible_playbook:         ansible/playbooks/paas.yml
-    ansible_groups:           docker_host,docker_swarm_manager,docker_ceph_client,docker_ceph_plugin_build
+    ansible_groups:           docker_host,docker_swarm_manager,docker_ceph_client
     virtualbox:
       cpus:                   1
       ram:                    512

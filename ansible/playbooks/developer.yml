@@ -55,6 +55,13 @@
       - python-argparse
       - gperftools-libs
       - ceph
+      - ceph-common
+      - librados2
+      - librados2-devel 
+      - librbd1
+      - librbd1-devel
+      - git
+      - go
 
   - name: Open TCP port 6789 for Ceph monitor connections
     firewalld: rich_rule='rule family="ipv4" port protocol="tcp" port="6789" accept' permanent=true state=enabled immediate=true
@@ -168,6 +175,13 @@
     command: ceph osd pool create docker 128
     when: (osd_number_exists.stat.exists == False)
 
+  - name: Create the /home/vagrant/go directory
+    file: path=/home/vagrant/go state=directory owner=vagrant group=vagrant mode=0770
+  - name: Build the docker_ceph_driver
+    shell: GOPATH=/home/vagrant/go go get github.com/marcusportmann/rbd-docker-plugin
+    become_user: vagrant
+    
+
 
 - hosts: developer_docker
   remote_user: vagrant
@@ -268,82 +282,13 @@
     when: (docker_swarm_manager_token.stdout.find("This node is not a swarm manager") >= 0)  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-- hosts: docker_ceph_client
+- hosts: developer_desktop
   remote_user: vagrant
   become: yes
   become_user: root
   tasks:
-
-  - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
-    stat: path=/etc/ceph/ceph.client.docker.keyring
-    register: cluster_client_docker_keyring_exists
-    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
-  - fail:
-      msg: "Failed to find the /etc/ceph/ceph.client.docker.keyring file on the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
-    when: cluster_client_docker_keyring_exists.stat.exists == False
-    
-  - name: "Check if the /etc/ceph/ceph.client.docker.keyring file exists"
-    stat: path=/etc/ceph/ceph.client.docker.keyring
-    register: local_cluster_client_docker_keyring_exists
-  - name: "Fetch the /etc/ceph/ceph.client.docker.keyring file from the first monitor node ({{ server_names_by_group['ceph_monitor'][0] }})"
-    fetch: src=/etc/ceph/ceph.client.docker.keyring dest=/tmp
-    when: local_cluster_client_docker_keyring_exists.stat.exists == False
-    delegate_to: "{{ server_names_by_group['ceph_monitor'][0] }}"
-  - name: "Copy the ceph.client.docker.keyring file to the Docker host"
-    copy: src="/tmp/{{ inventory_hostname }}/etc/ceph/ceph.client.docker.keyring" dest=/etc/ceph/ owner=root group=root mode=0640
-    when: local_cluster_client_docker_keyring_exists.stat.exists == False
-  - name: "Set the permissions for the /etc/ceph/ceph.client.docker.keyring file"
-    file: path=/etc/ceph/ceph.client.docker.keyring state=file owner=root group=root mode=0640
-  - name: Install the latest Ceph client packages
-    yum: 
-      name: "{{item}}"
-      state: latest
-    with_items:
-      - ceph-common
-      - librados2 
-      - librbd1
-  - name: Create the /etc/ceph/ceph.conf file
-    template: src=../templates/ceph-docker.conf.j2 dest=/etc/ceph/ceph.conf owner=root group=root mode=0644   
-  - name: "Copy the rbd-docker-plugin"
-    copy: src="../files/rbd-docker-plugin" dest=/usr/bin owner=root group=root mode=0770
-
-
-- hosts: docker_ceph_plugin_build
-  remote_user: vagrant
-  become: yes
-  become_user: root
-  tasks:
-  - name: Install the latest packages required to build the Docker Ceph plugin
-    yum: 
-      name: "{{item}}"
-      state: latest
-    with_items:
-      - ceph-common
-      - librados2-devel 
-      - librbd1-devel
-      - git
-      - go
-  - name: Create the /tmp/go directory
-    file: path=/tmp/go state=directory owner=root group=root mode=0770
-  - name: Build the docker_ceph_driver
-    shell: GOPATH=/tmp/go go get github.com/marcusportmann/rbd-docker-plugin
-
-
-
-
-
+  - name: install the 'Gnome desktop' environment group
+    yum: name="@^gnome-desktop-environment" state=present
       
 
 

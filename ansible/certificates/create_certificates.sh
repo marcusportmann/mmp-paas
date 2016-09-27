@@ -184,7 +184,6 @@ openssl req -new -nodes -key paas/paas-host-6.key -out paas/paas-host-6.csr -sub
 openssl ca -extensions server_and_client_cert -batch -config paas-ca/paas-ca.config -in paas/paas-host-6.csr -out paas/paas-host-6.crt -keyfile paas-ca/paas-ca.key
 openssl x509 -text -in paas/paas-host-6.crt
 
-
 # Create the developer certificate
 openssl genrsa -out paas/developer.key 4096
 openssl req -new -nodes -key paas/developer.key -out paas/developer.csr -subj "/O=${ORGANISATION_NAME}/OU=${BUSINESS_UNIT_NAME}/CN=${APPLICATION_NAME}Root Certificate Authority/CN=${APPLICATION_NAME}PaaS Certificate Authority/CN=developer.local"
